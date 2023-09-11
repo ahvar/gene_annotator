@@ -20,21 +20,33 @@ class TestPipelineUtils(unittest.TestCase):
     Unit tests for pipeline utils
     """
 
-    def setUp(self):
-        self.ctx = Context()
+    # def setUp(self):
+    #    self.ctx = Context()
 
     @patch("pathlib.Path")
-    def test_validate_etl_output_dir(self, MockPath):
+    @patch("typer.Context")
+    def test_validate_etl_output_dir(self, mock_context, mock_path):
         """
         Test the validate etl output directory function
         """
         mock_instance = Mock()
-        MockPath.return_value = mock_instance
+        mock_path.return_value = mock_instance
 
         mock_instance.exists.return_value = False
 
-        ctx = typer.Context(command=None)
-        output_dir = validate_etl_output_dir(ctx, MockPath("/path/to/nowhere"))
+        with self.assertRaises(typer.BadParameter):
+            validate_etl_output_dir(mock_context, mock_path("/path/to/nowhere"))
 
-        mock_instance.mkdir.assert_called_once()
-        self.assertTrue("etl" in output_dir.parts)
+        mock_instance.mkdir.assert_not_called()
+
+    @patch("pathlib.Path")
+    def test_validate_etl_output_dir_nonexistent(self, mock_path):
+        """
+        Test the validate_etl_output_directory function when the directory doesn't exist.
+        """
+        mock_instance = Mock()
+        mock_instance.exists.return_value = False
+        mock_path.return_value = mock_instance
+
+        with self.assertRaises(typer.BadParameter):
+            validate_etl_output_dir(Mock(), mock_path("/path/to/nonexistent"))
