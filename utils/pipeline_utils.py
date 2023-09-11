@@ -30,14 +30,14 @@ def get_formatted_date() -> datetime:
     return today.strftime("%Y-%m-%d")
 
 
-def validate_gate_output_dir(ctx: typer.Context, gate_output_dir: Path) -> Path:
+def validate_etl_output_dir(ctx: typer.Context, gate_output_dir: Path) -> Path:
     """
     A user has the option to pass GATE a log dir path
 
     :param ctx:               the typer context object
     :param gate_output_dir:   the output directory
     """
-    timestamp = datetime.datetime.utcnow().strftime("%Y_%m_%dT%H_%M_%SZ")
+    timestamp = datetime.utcnow().strftime("%m%d%yT%H%M%S")
     if gate_output_dir and gate_output_dir.exists():
         user_specified_output_dir = gate_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
