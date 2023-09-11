@@ -7,6 +7,7 @@ import logging
 import sys
 from pathlib import Path
 from datetime import datetime
+from utils.logging_utils import LoggingUtils, LogFileCreationError
 
 __version__ = "1.0.0"
 __copyright__ = (
@@ -19,15 +20,6 @@ __Application__ = "ETL_PIPELINE"
 ETL_LOGGER_NAME = __Application__ + "__" + __version__
 
 etl_logger = logging.getLogger(ETL_LOGGER_NAME)
-
-
-def get_formatted_date() -> datetime:
-    """
-    Returns a string representation of today's date
-    @return date: "YYYY-MM-DD"
-    """
-    today = datetime.today()
-    return today.strftime("%Y-%m-%d")
 
 
 def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -53,6 +45,36 @@ def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         etl_output_dir = project_root / "etl" / f"output_{timestamp}"
         etl_output_dir.mkdir()
     return etl_output_dir
+
+
+def init_log_and_results_dir(etl_output_dir: Path) -> None:
+    """
+    Create the results and log output directories
+
+    :params etl_output_dir: the etl output directory
+    """
+    for subdir in ["logs", "results"]:
+        path = etl_output_dir / subdir
+        path.mkdir()
+
+
+def get_logger(etl_output_dir, log_level) -> LoggingUtils:
+    """
+    Construct and return a custom logger
+
+    :params etl_output_dir: the etl output directory
+    :params      log_level: the log level
+    :return   LoggingUtils: a custom logger
+    """
+    logging_file = "pipeline.log"
+    log_dir = etl_output_dir / "logs"
+    app_log = LoggingUtils(
+        applicationName=f"{__Application__} {__version__}",
+        logFile=log_dir / logging_file,
+        fileLevel=log_level,
+        consoleLevel=logging.ERROR,
+    )
+    return app_log
 
 
 def set_error_and_exit(error):

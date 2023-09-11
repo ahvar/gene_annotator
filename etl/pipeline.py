@@ -7,7 +7,12 @@ from pathlib import Path
 import typer
 from typing_extensions import Annotated
 from utils.logging_utils import LoggingUtils, LogFileCreationError
-from utils.pipeline_utils import validate_etl_output_dir, set_error_and_exit
+from utils.pipeline_utils import (
+    validate_etl_output_dir,
+    set_error_and_exit,
+    init_log_and_results_dir,
+    get_logger,
+)
 
 app = typer.Typer()
 
@@ -58,20 +63,8 @@ def main(
         else:
             log_level = logging.INFO
 
-        # create the logs and results sub-directories
-        logs_and_results = ["logs", "results"]
-        for subdir in logs_and_results:
-            path = etl_output_dir / subdir
-            path.mkdir()
-
-        logging_file = "pipeline.log"
-        log_dir = etl_output_dir / "logs"
-        app_log = LoggingUtils(
-            applicationName=f"{__Application__} {__version__}",
-            logFile=log_dir / logging_file,
-            fileLevel=log_level,
-            consoleLevel=logging.ERROR,
-        )
+        init_log_and_results_dir(etl_output_dir=etl_output_dir)
+        app_log = get_logger(etl_output_dir=etl_output_dir, log_level=log_level)
         app_log.logApplicationStart()
 
     except LogFileCreationError as lfe:
