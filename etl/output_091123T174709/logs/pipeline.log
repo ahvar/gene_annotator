@@ -1,0 +1,12 @@
+[11Sep2023 13:47:09.862] - logging_utils - INFO - **************************************************************
+[11Sep2023 13:47:09.862] - logging_utils - INFO -   User         = q1016330
+[11Sep2023 13:47:09.862] - logging_utils - INFO -   Hostname     = vsd-login01.eacc.ds.quintiles.com
+[11Sep2023 13:47:09.863] - logging_utils - INFO -   Command      = ./etl/pipeline.py
+[11Sep2023 13:47:09.863] - logging_utils - INFO -   Application  = ETL_PIPELINE 1.0.0
+[11Sep2023 13:47:09.863] - logging_utils - INFO -   Start        = 13:47:09.861712
+[11Sep2023 13:47:09.864] - logging_utils - INFO - **************************************************************
+[11Sep2023 13:47:09.864] - logging_utils - INFO - **************************************************************
+[11Sep2023 13:47:09.864] - logging_utils - INFO - ETL_PIPELINE 1.0.0 finished.
+[11Sep2023 13:47:09.865] - logging_utils - INFO -   Finish time  = 13:47:09.864607
+[11Sep2023 13:47:09.865] - logging_utils - INFO -   Elapsed time = 0:00:00.002895
+[11Sep2023 13:47:09.865] - logging_utils - INFO - **************************************************************

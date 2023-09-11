@@ -1,3 +1,4 @@
 envs/
 .vscode/
 instructions.md
+*__pycache__*

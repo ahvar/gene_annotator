@@ -1,5 +1,5 @@
 """
-Utility functions for GATE pipeline.py
+Utility functions for ETL pipeline
 """
 
 import typer
@@ -15,10 +15,10 @@ __copyright__ = (
         "utf-8", "ignore"
     )
 )
-__Application__ = "GATE"
-GATE_LOGGER_NAME = __Application__ + "__" + __version__ + "_" + "gate"
+__Application__ = "ETL_PIPELINE"
+ETL_LOGGER_NAME = __Application__ + "__" + __version__
 
-gate_logger = logging.getLogger(GATE_LOGGER_NAME)
+etl_logger = logging.getLogger(ETL_LOGGER_NAME)
 
 
 def get_formatted_date() -> datetime:
@@ -30,28 +30,29 @@ def get_formatted_date() -> datetime:
     return today.strftime("%Y-%m-%d")
 
 
-def validate_etl_output_dir(ctx: typer.Context, gate_output_dir: Path) -> Path:
+def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
     """
-    A user has the option to pass GATE a log dir path
+    A user has the option to pass ETL pipeline an output dir, otherwise,
+    sets default
 
     :param ctx:               the typer context object
-    :param gate_output_dir:   the output directory
+    :param etl_output_dir:    the output directory for ETL Pipeline
     """
     timestamp = datetime.utcnow().strftime("%m%d%yT%H%M%S")
-    if gate_output_dir and gate_output_dir.exists():
-        user_specified_output_dir = gate_output_dir / f"output_{timestamp}"
+    if etl_output_dir and etl_output_dir.exists():
+        user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
-    if gate_output_dir and not gate_output_dir.exists():
-        gate_logger.error(f"The output directory for GATE: {gate_output_dir}")
-        raise typer.BadParameter(f"GATE output directory: {gate_output_dir}")
-    if not gate_output_dir:
-        gate_logger.debug("Creating default output directory and logfile....")
-        gate_logger.debug(f"../etl/output_<timestamp>/")
+    if etl_output_dir and not etl_output_dir.exists():
+        etl_logger.error(f"The output directory for GATE: {etl_output_dir}")
+        raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
+    if not etl_output_dir:
+        etl_logger.debug("Creating default output directory and logfile....")
+        etl_logger.debug(f"../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
-        project_root = current_file_path.parent
-        gate_output_dir = project_root / "etl" / f"output_{timestamp}"
-        gate_output_dir.mkdir()
-    return gate_output_dir
+        project_root = current_file_path.parent.parent
+        etl_output_dir = project_root / "etl" / f"output_{timestamp}"
+        etl_output_dir.mkdir()
+    return etl_output_dir
 
 
 def set_error_and_exit(error):

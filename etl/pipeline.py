@@ -2,14 +2,12 @@
 """
 ETL Pipeline: Extact Transform Load
 """
-import typer
 import logging
-import datetime
-import os
 from pathlib import Path
+import typer
 from typing_extensions import Annotated
-from utils.pipeline_utils import validate_etl_output_dir, set_error_and_exit
 from utils.logging_utils import LoggingUtils, LogFileCreationError
+from utils.pipeline_utils import validate_etl_output_dir, set_error_and_exit
 
 app = typer.Typer()
 
