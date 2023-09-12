@@ -12,6 +12,7 @@ from utils.pipeline_utils import (
     set_error_and_exit,
     init_log_and_results_dir,
     get_logger,
+    GeneReader,
 )
 
 app = typer.Typer()
@@ -66,6 +67,8 @@ def main(
         init_log_and_results_dir(etl_output_dir=etl_output_dir)
         app_log = get_logger(etl_output_dir=etl_output_dir, log_level=log_level)
         app_log.logApplicationStart()
+
+        gene_reader = GeneReader(etl_output_dir.parent / "data")
 
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")

@@ -7,7 +7,9 @@ import logging
 import sys
 from pathlib import Path
 from datetime import datetime
+import pandas as pd
 from utils.logging_utils import LoggingUtils, LogFileCreationError
+from utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
 
 __version__ = "1.0.0"
 __copyright__ = (
@@ -20,6 +22,9 @@ __Application__ = "ETL_PIPELINE"
 ETL_LOGGER_NAME = __Application__ + "__" + __version__
 
 etl_logger = logging.getLogger(ETL_LOGGER_NAME)
+
+genes_file_name = "genes.csv"
+gene_annotations_file_name = "gene_annotation.tsv"
 
 
 def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -86,3 +91,103 @@ def set_error_and_exit(error):
             The error message to report.
     """
     sys.stderr.write(f"Error: {error} \n")
+
+
+class GeneReader:
+    """
+    Provides functions for:
+     - reading gene type and annotation data
+     - identifying duplicate entries in datasets
+     - counting unique genes
+    """
+
+    def __init__(self, data_dir: Path):
+        """
+        Construct GeneReader
+        :params data_dir: the data directory; expected to be ../etl/data
+        """
+        etl_logger.debug(f"Constructing {self.__class__.__name__}...")
+        self._data_dir = data_dir
+        self._genes = pd.DataFrame()
+        self._gene_annotations = pd.DataFrame()
+        self._results = pd.DataFrame()
+        etl_logger.debug("Construction successful")
+
+    def find_and_load_gene_data(self) -> None:
+        """
+        Gene and annotations data is expected to exist in data_dir
+
+        :params       data_type: a the data type to read from the MAGE directory
+        :raise FileNotFoundError: if the directory is invalid
+        """
+        if not self._data_dir.exists() or not self._data_dir.is_dir():
+            raise FileNotFoundError(
+                f"The directory {self._data_dir} in {self.__class__.__name__} does not exist or is not a directory."
+            )
+        self._check_that_dataset_exists(genes_file_name)
+        self._check_that_dataset_exists(gene_annotations_file_name)
+        self._gene_annotations = pd.read_csv(
+            self._data_dir / gene_annotations_file_name, delimiter="\t"
+        )
+        self._genes = pd.read_csv(self._data_dir / genes_file_name)
+
+    def _check_that_dataset_exists(self, data_set_file_name: str) -> None:
+        """
+        Checks that the dataset file exists
+        :params     data_set_file_name: the filename with genes or annotations dataset
+        :raise GeneAnnotationException: if an error finding the gene annotations dataset
+        :raise       GeneDataException: if an error finding the gene dataset
+        :rasie   FileNotFoundException: if error finding any file or if path is not a file
+        """
+        try:
+            data_file = list(self._data_dir.glob(f"*{data_set_file_name}"))[0]
+            if data_file:
+                if not data_file.exists() or not data_file.is_file():
+                    if data_set_file_name.endswith(".tsv"):
+                        raise GeneAnnotationException(
+                            f"The directory {self._data_dir} in {self.__class__.__name__} does not have {gene_annotations_file_name}"
+                        )
+                    if data_set_file_name.endswith(".csv"):
+                        raise GeneDataException(
+                            f"The directory {self._data_dir} in {self.__class__.__name__} does not have {genes_file_name}"
+                        )
+
+                    raise FileNotFoundError(
+                        f"The file {data_file} that was passed to {self.__class__.__name__} does not exist or is not a file."
+                    )
+        except IndexError as ie:
+            raise FileNotFoundError(
+                f"{self.__class__.__name__} did not find {data_set_file_name}"
+            ) from ie
+
+    @property
+    def data_dir(self) -> Path:
+        """
+        Returns the data directory
+        :return data_dir: the data directory
+        """
+        return self._data_dir
+
+    @data_dir.setter
+    def data_dir(self, data_dir: Path) -> None:
+        """
+        Sets the data directory
+        :params data_dir: the data directory
+        """
+        self._data_dir = data_dir
+
+    @property
+    def genes(self) -> pd.DataFrame:
+        """
+        Returns gene dataset
+        :return genes: gene dataset
+        """
+        return self._genes
+
+    @property
+    def gene_annotations(self) -> pd.DataFrame:
+        """
+        Returns the gene annotations dataset
+        :return gene_annotations: gene annotations
+        """
+        return self._gene_annotations
