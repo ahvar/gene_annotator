@@ -43,28 +43,28 @@ class LoggingUtils:
         formatting for the log.
         """
         # The name of the application
-        self._appName = applicationName
+        self._app_Name = applicationName
         # The filename used to write log output
-        self._filename = logFile
+        self._file_name = logFile
         # The logging level for messages written to the logging file. All messages at this
         # level and higher will be logged.
-        self._fileLevel = fileLevel
+        self._file_Level = fileLevel
         # The level for messages to write to the console.
-        self._consoleLevel = consoleLevel
+        self._console_Level = consoleLevel
         # Instance of logging.Logger used for logging.
         self._logger = None
         # Handler for writing to the log file.
-        self._fileHandler = None
+        self._file_handler = None
         # Handler for writing to the console.
-        self._consoleHandler = None
+        self._console_handler = None
         # User who initiated this program.
         self._username = getpass.getuser()
         # The system on which the program was run.
         self._hostname = platform.node()
         # The start time for this program.
-        self._startDateTime = datetime.now()
+        self._start_date_time = datetime.now()
         # The time this program is finished. This is set by calling logApplicationFinish().
-        self._finishDateTime = None
+        self._finish_date_time = None
         # Date and time formats
         self._fullDateTimeFormat = "%d%b%Y %H:%M:%S"
         self._timeWithMilleseconds = "%H:%M:%S.%f"
@@ -75,37 +75,37 @@ class LoggingUtils:
         self._logger = logging.getLogger()
         self._logger.setLevel(logging.DEBUG)
         if fileLevel:
-            if not self._filename:
-                self._filename = os.path.join(self._appName + ".log")
+            if not self._file_name:
+                self._file_name = os.path.join(self._app_Name + ".log")
 
             try:
-                self._fileHandler = logging.FileHandler(
-                    self._filename, encoding="UTF-8"
+                self._file_handler = logging.FileHandler(
+                    self._file_name, encoding="UTF-8"
                 )
             except IOError:
-                raise LogFileCreationError(self._filename)
+                raise LogFileCreationError(self._file_name)
 
-            self._fileHandler.setLevel(self._fileLevel)
-            self._logger.addHandler(self._fileHandler)
+            self._file_handler.setLevel(self._file_Level)
+            self._logger.addHandler(self._file_handler)
 
-            self._fileHandler.setFormatter(formatter)
+            self._file_handler.setFormatter(formatter)
         if consoleLevel:
-            self._consoleHandler = logging.StreamHandler()
-            self._consoleHandler.setLevel(self._consoleLevel)
-            self._consoleHandler.setFormatter(formatter)
-            self._logger.addHandler(self._consoleHandler)
+            self._console_handler = logging.StreamHandler()
+            self._console_handler.setLevel(self._console_Level)
+            self._console_handler.setFormatter(formatter)
+            self._logger.addHandler(self._console_handler)
 
     def __del__(self):
         """
         Destructor for LoggingUtils.
         """
 
-        if self._fileHandler:
-            self._fileHandler.close()
-            self._logger.removeHandler(self._fileHandler)
-        if self._consoleHandler:
-            self._consoleHandler.close()
-            self._logger.removeHandler(self._consoleHandler)
+        if self._file_handler:
+            self._file_handler.close()
+            self._logger.removeHandler(self._file_handler)
+        if self._console_handler:
+            self._console_handler.close()
+            self._logger.removeHandler(self._console_handler)
 
         # Shutdown
         logging.shutdown()
@@ -120,14 +120,14 @@ class LoggingUtils:
             * Start time
         """
         command = " ".join(sys.argv)
-        start = self._formatDateTime(self._startDateTime)
+        start = self._formatDateTime(self._start_date_time)
         self._logger.info(
             "**************************************************************"
         )
         self._logger.info(f"  User         = {self._username}")
         self._logger.info(f"  Hostname     = {self._hostname}")
         self._logger.info(f"  Command      = {command}")
-        self._logger.info(f"  Application  = {self._appName}")
+        self._logger.info(f"  Application  = {self._app_Name}")
         self._logger.info(f"  Start        = {start}")
         self._logger.info(
             "**************************************************************"
@@ -137,13 +137,13 @@ class LoggingUtils:
         """
         Log the finish of an application. This inserts the following information:
         """
-        self._finishDateTime = datetime.now()
-        finish = self._formatDateTime(self._finishDateTime)
-        elapsedTime = self._finishDateTime - self._startDateTime
+        self._finish_date_time = datetime.now()
+        finish = self._formatDateTime(self._finish_date_time)
+        elapsedTime = self._finish_date_time - self._start_date_time
         self._logger.info(
             "**************************************************************"
         )
-        self._logger.info(f"{self._appName} finished.")
+        self._logger.info(f"{self._app_Name} finished.")
         self._logger.info(f"  Finish time  = {finish}")
         self._logger.info(f"  Elapsed time = {str(elapsedTime)}")
         self._logger.info(
