@@ -37,11 +37,3 @@ $ ./etl/pipelines.py [--etl-output-directory OUTPUT_DIR | -o OUTPUT_DIR] [--debu
      - Writes excluded tigrfam_id entries to excluded_tigrfam_ids.csv.
      - Outputs the final merged data to final_results.csv.
 
-
-
-
-    
-
-# Contribute
-You must be able to explain each line of code you contribute to a rubber duck; or some other odd, uninspiring, inanimate object.
-

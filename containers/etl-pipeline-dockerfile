@@ -1,18 +1,21 @@
+# Use Python 3.7 as base image
 FROM python:3.7
-RUN apt-get update && apt-get install -y python3-pip
 
+# Set environment variables
 ENV PYTHONPATH=/opt/pipeline/:$PYTHONPATH
 ENV PATH=/opt/pipeline/:$PATH
 
+# Set working directory in container
 WORKDIR /opt/pipeline
-COPY ./requirements.txt requirements.txt
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
+# Copy the requirements file into the container
+COPY ./requirements.txt .
 
+# Upgrade pip and install required packages
+RUN pip install --upgrade pip && pip install -r requirements.txt
+
+# Copy the entire project into the container
 COPY ./ ./
 
-# Make ionqc executable and symlink it to /usr/loca/bin so it can be executed from anywhere
-RUN chmod +x /opt/pipeline/etl/pipeline.py && ln -s /opt/pipeline/etl/pipeline /usr/local/bin/pipeline
-
-
+# Make the pipeline script executable and create a symlink
+RUN chmod +x /opt/pipeline/etl/pipeline.py && ln -s /opt/pipeline/etl/pipeline.py /usr/local/bin/pipeline

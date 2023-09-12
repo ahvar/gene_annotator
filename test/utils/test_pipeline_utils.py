@@ -10,6 +10,7 @@ from collections import namedtuple
 from pandas.errors import EmptyDataError
 from itertools import chain, repeat
 from pathlib import Path
+from utils.references import pid_suffix_col
 from utils.pipeline_utils import (
     validate_etl_output_dir,
     GeneReader,
@@ -17,6 +18,7 @@ from utils.pipeline_utils import (
     GeneAnnotationException,
     gene_annotations_file_name,
     genes_file_name,
+    etl_logger,
 )
 import typer
 from typer import Context
@@ -157,3 +159,81 @@ class TestGeneReader(unittest.TestCase):
 
         with self.assertRaises(GeneDataException):
             self._gene_reader._check_that_dataset_exists("mock_dataset.csv")
+
+    def test_log_duplicates(self):
+        """
+        Test logging of duplicates in genes and annotations data
+        """
+        genes_data = pd.DataFrame({"gene": ["gene1", "gene2", "gene1"]})
+        annotations_data = pd.DataFrame({"annotation": ["anno1", "anno2", "anno2"]})
+
+        self._gene_reader._genes = genes_data
+        self._gene_reader._gene_annotations = annotations_data
+
+        with patch.object(etl_logger, "info") as mock_info:
+            self._gene_reader.log_duplicates()
+
+            assert len(self._gene_reader._duplicate_genes) == 1
+            assert len(self._gene_reader._duplicate_annotations) == 1
+            mock_info.assert_called()
+
+    def test_remove_duplicates(self):
+        """
+        Test removal of duplicates in genes and annotations data
+        """
+        genes_data = pd.DataFrame({"gene": ["gene1", "gene2", "gene1"]})
+        annotations_data = pd.DataFrame({"annotation": ["anno1", "anno2", "anno2"]})
+
+        self._gene_reader._genes = genes_data
+        self._gene_reader._gene_annotations = annotations_data
+
+        self._gene_reader.remove_duplicates()
+
+        assert len(self._gene_reader._genes) == 2
+        assert len(self._gene_reader._gene_annotations) == 2
+
+    def test_log_unique_records(self):
+        """
+        Test logging of unique records in genes and annotations data
+        """
+        genes_data = pd.DataFrame({"gene": ["gene1", "gene2", "gene3"]})
+        annotations_data = pd.DataFrame({"annotation": ["anno1", "anno2", "anno3"]})
+
+        self._gene_reader._genes = genes_data
+        self._gene_reader._gene_annotations = annotations_data
+
+        with patch.object(etl_logger, "info") as mock_info:
+            self._gene_reader.log_unique_records()
+            mock_info.assert_called()
+
+    def test_determine_if_hgnc_id_exists(self):
+        """
+        Test creation of the 'hgnc_id_exists' column
+        """
+        genes_data = pd.DataFrame({"hgnc_id": [1, None, 3]})
+        self._gene_reader._genes = genes_data
+
+        self._gene_reader.determine_if_hgnc_id_exists()
+
+        assert self._gene_reader._genes["hgnc_id_exists"].tolist() == [
+            True,
+            False,
+            True,
+        ]
+
+    def test_parse_panther_id_suffix(self):
+        """
+        Test creation of the panther id suffix column
+        """
+        annotations_data = pd.DataFrame(
+            {"panther_id": ["PANTHER:001", "PANTHER:002", None]}
+        )
+        self._gene_reader._gene_annotations = annotations_data
+
+        self._gene_reader.parse_panther_id_suffix()
+
+        assert self._gene_reader._gene_annotations[pid_suffix_col].tolist() == [
+            "001",
+            "002",
+            None,
+        ]
