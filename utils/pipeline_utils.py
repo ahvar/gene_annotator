@@ -223,6 +223,7 @@ class GeneReader:
         Writes the gene_type count to an output file: gene_type_count.csv
         :params results_dir: the results output directory
         """
+        etl_logger.info(f"{self.__class__.__name__} writing gene type count...")
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
         gene_type_counts.columns = [gene_type_col, count_col]
         gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
@@ -241,7 +242,8 @@ class GeneReader:
 
     def parse_panther_id_suffix(self) -> None:
         """
-        Parse the suffix sub-string from the column named: PANTHER_ID
+        create a new column with the suffix sub-string from the
+        column named: panther_id
         """
         self._gene_annotations[pid_suffix_col] = (
             self._gene_annotations[panther_id_col].str.split(":").str[-1]
@@ -282,6 +284,7 @@ class GeneReader:
          This selects only those rows from genes_and_annotations that
          don't meet the conditions specified.
         """
+        etl_logger.info(f"{self.__class__.__name__} logging final records...")
         final_result = self._merged_genes_and_annotation_data[
             ~(
                 (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
@@ -292,7 +295,7 @@ class GeneReader:
                 )
             )
         ]
-
+        etl_logger.info(f"FINAL_RECORD_COUNT: {len(final_result)}")
         final_result.to_csv(results_dir / final_results_file_name)
 
     @property

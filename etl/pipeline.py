@@ -16,7 +16,7 @@ from utils.pipeline_utils import (
 )
 from utils.references import gene_stable_id_col, hgnc_id_col
 
-app = typer.Typer()
+cli = typer.Typer()
 
 __version__ = "1.0.0"
 __copyright__ = (
@@ -31,7 +31,7 @@ ETL_LOGGER_NAME = __Application__ + "__" + __version__
 etl_logger = logging.getLogger(ETL_LOGGER_NAME)
 
 
-@app.command(
+@cli.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
 def main(
@@ -92,4 +92,4 @@ def main(
 
 
 if __name__ == "__main__":
-    app()
+    cli()
