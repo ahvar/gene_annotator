@@ -69,11 +69,16 @@ def main(
         app_log.logApplicationStart()
 
         gene_reader = GeneReader(etl_output_dir.parent / "data")
+        gene_reader.find_and_load_gene_data()
+        gene_reader.log_duplicates()
+        gene_reader.remove_duplicates()
+        gene_reader.log_unique_records()
+        gene_reader.write_gene_type_count()
 
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
     except Exception as err:
-        set_error_and_exit(f"Unable to initiate Application and Auditor logs: {err}")
+        set_error_and_exit(f"Unable to initiate Application: {err}")
     finally:
         app_log.logApplicationFinish()
 

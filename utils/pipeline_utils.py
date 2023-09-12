@@ -25,6 +25,9 @@ etl_logger = logging.getLogger(ETL_LOGGER_NAME)
 
 genes_file_name = "genes.csv"
 gene_annotations_file_name = "gene_annotation.tsv"
+gene_type_col = "gene_type"
+gene_type_count_out_file = "gene_type_count.csv"
+count_col = "count"
 
 
 def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -44,7 +47,7 @@ def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
     if not etl_output_dir:
         etl_logger.debug("Creating default output directory and logfile....")
-        etl_logger.debug(f"../etl/output_<timestamp>/")
+        etl_logger.debug("../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
         project_root = current_file_path.parent.parent
         etl_output_dir = project_root / "etl" / f"output_{timestamp}"
@@ -110,6 +113,8 @@ class GeneReader:
         self._data_dir = data_dir
         self._genes = pd.DataFrame()
         self._gene_annotations = pd.DataFrame()
+        self._duplicate_genes = pd.DataFrame()
+        self._duplicate_annotations = pd.DataFrame()
         self._results = pd.DataFrame()
         etl_logger.debug("Construction successful")
 
@@ -120,12 +125,18 @@ class GeneReader:
         :params       data_type: a the data type to read from the MAGE directory
         :raise FileNotFoundError: if the directory is invalid
         """
+        etl_logger.info(
+            f"{self.__class__.__name__} is preparing to load gene and annotation data..."
+        )
         if not self._data_dir.exists() or not self._data_dir.is_dir():
             raise FileNotFoundError(
                 f"The directory {self._data_dir} in {self.__class__.__name__} does not exist or is not a directory."
             )
         self._check_that_dataset_exists(genes_file_name)
         self._check_that_dataset_exists(gene_annotations_file_name)
+        etl_logger.debug(
+            f"{self.__class__.__name__} is reading gene and annotation data..."
+        )
         self._gene_annotations = pd.read_csv(
             self._data_dir / gene_annotations_file_name, delimiter="\t"
         )
@@ -139,6 +150,9 @@ class GeneReader:
         :raise       GeneDataException: if an error finding the gene dataset
         :rasie   FileNotFoundException: if error finding any file or if path is not a file
         """
+        etl_logger.info(
+            f"{self.__class__.__name__} is checking that {data_set_file_name} datasets exist..."
+        )
         try:
             data_file = list(self._data_dir.glob(f"*{data_set_file_name}"))[0]
             if data_file:
@@ -159,6 +173,49 @@ class GeneReader:
             raise FileNotFoundError(
                 f"{self.__class__.__name__} did not find {data_set_file_name}"
             ) from ie
+
+    def log_duplicates(self) -> None:
+        """
+        Log the number of duplicate records in genes and annotations
+        """
+        etl_logger.info(f"{self.__class__.__name__} is finding duplicates...")
+        self._duplicate_genes = self._genes[self._genes.duplicated()]
+        self._duplicate_annotations = self._gene_annotations[
+            self._gene_annotations.duplicated()
+        ]
+        etl_logger.info(
+            f"DUPLICATE_RECORD_COUNT: {genes_file_name} - {len(self._duplicate_genes)}"
+        )
+        etl_logger.info(
+            f"DUPLICATE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._duplicate_annotations)}"
+        )
+
+    def remove_duplicates(self) -> None:
+        """
+        Remove duplicate genes and annotations
+        """
+        etl_logger.info(f"{self.__class__.__name__} is removing duplicates...")
+        self._genes = self._genes.drop_duplicates()
+        self._gene_annotations = self._gene_annotations.drop_duplicates()
+
+    def log_unique_records(self) -> None:
+        """
+        Log number of unique genes and annotations
+        """
+        etl_logger.info(f"{self.__class__.__name__} logging unique records...")
+        etl_logger.info(f"UNIQUE_RECORD_COUNT: {genes_file_name} - {len(self._genes)}")
+        etl_logger.info(
+            f"UNIQUE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._gene_annotations)}"
+        )
+
+    def write_gene_type_count(self, results_dir: Path) -> None:
+        """
+        Writes the gene_type count to an output file: gene_type_count.csv
+        :params results_dir: the results output directory
+        """
+        gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
+        gene_type_counts.columns = [gene_type_col, count_col]
+        gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
 
     @property
     def data_dir(self) -> Path:
