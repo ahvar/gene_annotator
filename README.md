@@ -35,13 +35,13 @@ Extract all files from the project archive to a location on your filesystem.
 ## Print the help message
 Here are two options for printing the help message for ETL PIPELINE
 
-### ETL PIPELINE help message locally
+### Option 1: ETL PIPELINE help message locally
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
     $ cd tha_vargas/
     $ python ./etl/pipeline.py --help
 
-### ETL PIPELINE help message using helper script
+### Option 2: ETL PIPELINE help message using helper script
     # be sure your virtual environment is activated
     # change to project root and run the helper script
     $ cd tha_vargas/
@@ -50,24 +50,19 @@ Here are two options for printing the help message for ETL PIPELINE
 ## Run the ETL PIPELINE
 Here are two options for running the pipeline
 
-### Run ETL PIPELINE
+### Option 1: Run ETL PIPELINE
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
     $ cd tha_vargas/
     $ python ./etl/pipeline.py
 
-### Run ETL PIPELINE using helper script
+### Option 2: Run ETL PIPELINE using helper script
     # be sure your virtual environment is activated
     # change to project root and run the helper script
     $ cd tha_vargas/
     $ python ./helper_scripts/run_etl.sh
 
-## Spin up an instance of the Flask server
-    # cd to api/
-    $ cd 
-
 Now you can observe the timestamped output directory in etl/ and check the tha_vargas/etl/output_<timestamp>/logs/pipeline.log for duplicate and unique record counts
-
 
 ## Spin up an instance of the Flask server
     # change to the api/ directory in project root and run the app
@@ -79,7 +74,22 @@ Now you can observe the timestamped output directory in etl/ and check the tha_v
 
 
 # Running with Docker
+Here are the steps to build the ETL PIPELINE container and run it
 
+## Make sure docker is installed
+    $ docker --version
+
+## Build the docker image
+    # cd to project root and run docker build
+    $ cd ../tha_vargas/
+    $ docker build -t etl-pipeline -f ./containers/etl-pipeline-dockerfile .
+
+## Run the container
+    # run the container expose port
+    $ docker run -it -p 5000:5000 --name etl_pipeline_container etl-container bash
+
+Now, if ./api/app.py is run inside the container, you should be able to access the service from
+your machine's browser or using a curl command from the terminal
 
 
 # Functionality
