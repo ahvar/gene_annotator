@@ -19,3 +19,6 @@ COPY ./ ./
 
 # Make the pipeline script executable and create a symlink
 RUN chmod +x /opt/pipeline/etl/pipeline.py && ln -s /opt/pipeline/etl/pipeline.py /usr/local/bin/pipeline
+
+# Set etl/pipeline.py as the default command to execute
+ENTRYPOINT ["python", "etl/pipeline.py"]

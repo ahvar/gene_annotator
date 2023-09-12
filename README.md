@@ -85,8 +85,16 @@ Here are the steps to build the ETL PIPELINE container and run it
     $ docker build -t etl-pipeline -f ./containers/etl-pipeline-dockerfile .
 
 ## Run the container
-    # run the container expose port
-    $ docker run -it -p 5000:5000 --name etl_pipeline_container etl-container bash
+    # the Dockerfile has an ENTRYPOINT that points to etl/pipeline.py
+    # running a container from this image will automatically execute the script
+    $ docker run --name etl_pipeline_container etl-pipeline
+
+## Run Interactively
+    # to inspect output files in the container, run unit tests, or the api/app.py
+    # run the container interactively and override the ENTRYPOINT
+    # map port '5000' of the host to port '5000' of the container
+    $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name etl_pipeline_container etl-pipeline
+
 
 Now, if ./api/app.py is run inside the container, you should be able to access the service from
 your machine's browser or using a curl command from the terminal
