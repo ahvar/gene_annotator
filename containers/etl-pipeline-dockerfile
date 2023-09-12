@@ -1,0 +1,18 @@
+FROM python:3.7
+RUN apt-get update && apt-get install -y python3-pip
+
+ENV PYTHONPATH=/opt/pipeline/:$PYTHONPATH
+ENV PATH=/opt/pipeline/:$PATH
+
+WORKDIR /opt/pipeline
+COPY ./requirements.txt requirements.txt
+
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
+
+COPY ./ ./
+
+# Make ionqc executable and symlink it to /usr/loca/bin so it can be executed from anywhere
+RUN chmod +x /opt/pipeline/etl/pipeline.py && ln -s /opt/pipeline/etl/pipeline /usr/local/bin/pipeline
+
+

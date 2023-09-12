@@ -10,6 +10,21 @@ from datetime import datetime
 import pandas as pd
 from utils.logging_utils import LoggingUtils, LogFileCreationError
 from utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
+from utils.references import (
+    genes_file_name,
+    gene_type_count_out_file,
+    gene_annotations_file_name,
+    gene_type_col,
+    panther_id_col,
+    pid_suffix_col,
+    hgnc_id_col,
+    hgnc_id_exists_col,
+    count_col,
+    excluded_tigrfam_file_name,
+    tigrfam_id_col,
+    excluded_tigrfam_vals,
+    final_results_file_name,
+)
 
 __version__ = "1.0.0"
 __copyright__ = (
@@ -22,12 +37,6 @@ __Application__ = "ETL_PIPELINE"
 ETL_LOGGER_NAME = __Application__ + "__" + __version__
 
 etl_logger = logging.getLogger(ETL_LOGGER_NAME)
-
-genes_file_name = "genes.csv"
-gene_annotations_file_name = "gene_annotation.tsv"
-gene_type_col = "gene_type"
-gene_type_count_out_file = "gene_type_count.csv"
-count_col = "count"
 
 
 def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -116,6 +125,7 @@ class GeneReader:
         self._duplicate_genes = pd.DataFrame()
         self._duplicate_annotations = pd.DataFrame()
         self._results = pd.DataFrame()
+        self._merged_genes_and_annotation_data = pd.DataFrame()
         etl_logger.debug("Construction successful")
 
     def find_and_load_gene_data(self) -> None:
@@ -216,6 +226,74 @@ class GeneReader:
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
         gene_type_counts.columns = [gene_type_col, count_col]
         gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
+
+    def determine_if_hgnc_id_exists(self) -> None:
+        """
+        Creates a new column called "hgnc_id_exists" with True | False
+        depending on whether "hgnc_id" column exists for that record
+
+        Note:
+         did not know that '~' was bitwise negation operator in Python and
+         here with a Pandas series of boolean values it inverts the values
+         so is True for rows where "hgnc_id" exists and False where it doesn't
+        """
+        self._genes[hgnc_id_exists_col] = ~self._genes[hgnc_id_col].isna()
+
+    def parse_panther_id_suffix(self) -> None:
+        """
+        Parse the suffix sub-string from the column named: PANTHER_ID
+        """
+        self._gene_annotations[pid_suffix_col] = (
+            self._gene_annotations[panther_id_col].str.split(":").str[-1]
+        )
+
+    def merge_gene_and_annotations(self, col_one: str, col_two: str) -> None:
+        """
+        Merge on two columns
+
+        Note:
+         'inner' joins returns only the rows for which there are matching keys in both DataFrames
+        :params col_one: a column header
+        :params col_two: another column header
+        """
+        self._merged_genes_and_annotation_data = pd.merge(
+            self._genes, self._gene_annotations, how="inner", on=[col_one, col_two]
+        )
+
+    def exclude_tigrfram_and_write(self, results_dir: Path) -> None:
+        """
+        Exclude rows where the tigrfram_id is null or in ('TIGR00658', 'TIGR00936') and
+        output those to file
+        :params results_dir: the results dir
+        """
+        excluded_tigrfam = self._merged_genes_and_annotation_data[
+            (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
+            | self._merged_genes_and_annotation_data[tigrfam_id_col].isin(
+                excluded_tigrfam_vals
+            )
+        ]
+        excluded_tigrfam.to_csv(results_dir / excluded_tigrfam_file_name)
+
+    def write_gene_and_annotations_final(self, results_dir: Path) -> None:
+        """
+        Write the merged gene and annotation data to file
+        Note:
+         used the ~ operator again to negate the combined condition.
+         This selects only those rows from genes_and_annotations that
+         don't meet the conditions specified.
+        """
+        final_result = self._merged_genes_and_annotation_data[
+            ~(
+                (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
+                | (
+                    self._merged_genes_and_annotation_data[tigrfam_id_col].isin(
+                        excluded_tigrfam_vals
+                    )
+                )
+            )
+        ]
+
+        final_result.to_csv(results_dir / final_results_file_name)
 
     @property
     def data_dir(self) -> Path:

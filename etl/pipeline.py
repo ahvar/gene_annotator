@@ -14,6 +14,7 @@ from utils.pipeline_utils import (
     get_logger,
     GeneReader,
 )
+from utils.references import gene_stable_id_col, hgnc_id_col
 
 app = typer.Typer()
 
@@ -73,7 +74,14 @@ def main(
         gene_reader.log_duplicates()
         gene_reader.remove_duplicates()
         gene_reader.log_unique_records()
-        gene_reader.write_gene_type_count()
+        gene_reader.write_gene_type_count(etl_output_dir / "results")
+        gene_reader.determine_if_hgnc_id_exists()
+        gene_reader.parse_panther_id_suffix()
+        gene_reader.merge_gene_and_annotations(
+            col_one=gene_stable_id_col, col_two=hgnc_id_col
+        )
+        gene_reader.exclude_tigrfram_and_write(etl_output_dir / "results")
+        gene_reader.write_gene_and_annotations_final(etl_output_dir / "results")
 
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
