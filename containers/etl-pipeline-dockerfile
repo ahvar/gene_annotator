@@ -9,7 +9,7 @@ ENV PATH=/opt/pipeline/:$PATH
 WORKDIR /opt/pipeline
 
 # Copy the requirements file into the container
-COPY ./requirements.txt .
+COPY ./requirements.txt /opt/pipeline
 
 # Upgrade pip and install required packages
 RUN pip install --upgrade pip && pip install -r requirements.txt

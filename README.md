@@ -5,49 +5,80 @@
 
 This application, ETL PIPELINE, is designed to process gene annotation data. It identifies duplicate entries, logs them, removes them, and performs various data transformation steps. The results are saved in the final_results.csv file.
 
-# Installation and Setup
+# Installation and Setup for Running ETL PIPELINE Locally
+Here are the steps to run ETL PIPELINE from the command-line in your local environment. 
     
 ## Extraction: 
 Extract all files from the project archive to a location on your filesystem.
-## CD to your project root and create a virtual environment with Conda: 
-    - this command will create a Python 3.7 venv in your project root, which makes the project more self-contained
+## CD to your project root and create a virtual environment: 
+    # this command will create a Python 3.7 venv in your project root, which makes the project more self-contained
+    # conda is used in this example but any package manager should work
+    $ cd ../path/to/tha_vargas
     $ conda create --prefix ./envs python=3.7
+## Activate your virtual environment
+    # from the project root
+    $ conda activate ./envs
 ## Install dependencies:
-    - from project root, pip install the requirements
+    # from project root, pip install dependencies defined in requirements.txt
     $ pip install -r requirements.txt
-## Configure Python Interpreter (**This step is crucial. Without it, the program will raise an import error as it won't be able to find necessary modules**):
-    - from project root, source the export_python_path helper script so the interpreter can properly import modules:
-    $ source ./project_root/helper_scripts/export_python_path.sh
+## Modify PYTHONPATH for the interpreter in your virtual environment (**This step is crucial. Without it, the program will raise an import error as it won't be able to find necessary modules**):
+    # from project root, source the export_python_path helper script 
+    # this tells the interpreter where to find custom modules so it can properly import them:
+    $ source ./tha_vargas/helper_scripts/export_python_path.sh
 ## Run the tests
-    - change to the test directory and run pytest. It will "discover" tests and run them
-    $ cd ./test
+    # change to the test directory and run pytest. It will "discover" tests and run them
+    $ cd test/
     $ pytest -vv
 
 # Usage
-From the project root
 
-## Use the helper script to view ETL PIPELINE help message:
- - from project root
-$ ./helper_scripts/help.sh
+## Print the help message
+Here are two options for printing the help message for ETL PIPELINE
 
-## Run pipeline help directly on CLI
-$ python ./etl/pipeline.py --help
+### ETL PIPELINE help message locally
+    # be sure your virtual environment is activated
+    # change to project root and run pipeline.py
+    $ cd tha_vargas/
+    $ python ./etl/pipeline.py --help
 
-## Run pipeline directly:
-$ python ./etl/pipelines.py [--etl-output-directory OUTPUT_DIR | -o OUTPUT_DIR] [--debug]
+### ETL PIPELINE help message using helper script
+    # be sure your virtual environment is activated
+    # change to project root and run the helper script
+    $ cd tha_vargas/
+    $ python ./helper_scripts/help.sh
 
-## Or use the helper script:
-$ python ./etl/pipeline.py
+## Run the ETL PIPELINE
+Here are two options for running the pipeline
 
-## Observe the timestamped output directory in etl/
- - check pipeline.log for duplicate and unique record counts
+### Run ETL PIPELINE
+    # be sure your virtual environment is activated
+    # change to project root and run pipeline.py
+    $ cd tha_vargas/
+    $ python ./etl/pipeline.py
+
+### Run ETL PIPELINE using helper script
+    # be sure your virtual environment is activated
+    # change to project root and run the helper script
+    $ cd tha_vargas/
+    $ python ./helper_scripts/run_etl.sh
 
 ## Spin up an instance of the Flask server
- - change to the api/ directory in project root
- $ ./app
+    # cd to api/
+    $ cd 
+
+Now you can observe the timestamped output directory in etl/ and check the tha_vargas/etl/output_<timestamp>/logs/pipeline.log for duplicate and unique record counts
+
+
+## Spin up an instance of the Flask server
+    # change to the api/ directory in project root and run the app
+    $ cd ./tha_vargas/api
+    $ ./app.py
 
 ## Use Curl to query annotation data
  $ curl "http://localhost:5000/genes?gene_stable_id=ENSG00000281775&pid_suffix=SF0"
+
+
+# Running with Docker
 
 
 
