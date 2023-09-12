@@ -1,9 +1,12 @@
 #!/bin/bash
-export PYTHONPATH=/rhome/q1016330/dev/tha_vargas:/rhome/q1016330/dev/tha_vargas/src:/rhome/q1016330/dev/tha_vargas/src/utils:/rhome/q1016330/dev/tha_vargas/src/input:/rhome/q1016330/dev/tha_vargas/src/cli:/rhome/q1016330/dev/tha_vargas/test:/rhome/q1016330/dev/tha_vargas/test/utils
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/etl:$PROJECT_ROOT/utils:$PROJECT_ROOT/etl/data:$PROJECT_ROOT/test:$PROJECT_ROOT/test/utils"
 
 echo
 echo -----------------------------------------------------------------------
-echo etl pipeline with no params....
+echo run etl pipeline
 echo -----------------------------------------------------------------------
 echo
 

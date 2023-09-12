@@ -1,5 +1,13 @@
 #!/bin/bash
-export PYTHONPATH=/rhome/q1016330/dev/tha_vargas:/rhome/q1016330/dev/tha_vargas/etl:/rhome/q1016330/dev/tha_vargas/utils:/rhome/q1016330/dev/tha_vargas/etl/data:/rhome/q1016330/dev/tha_vargas/test:/rhome/q1016330/dev/tha_vargas/test/utils
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/etl:$PROJECT_ROOT/utils:$PROJECT_ROOT/etl/data:$PROJECT_ROOT/test:$PROJECT_ROOT/test/utils"
+
+echo -----------------------------------------------------------------------
+echo python path:
+echo "PYTHONPATH set to: $PYTHONPATH"
+echo -----------------------------------------------------------------------
 
 echo -----------------------------------------------------------------------
 echo etl pipeline help message...
