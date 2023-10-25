@@ -20,8 +20,7 @@ cli = typer.Typer()
 
 __version__ = "1.0.0"
 __copyright__ = (
-    "Copyright \xa9 2023 Bristol Myers Squibb | "
-    "Informatics and Predictive Sciences. All rights reserved.".encode(
+    "Copyright \xa9 2023 Arthur Vargas | All rights reserved.".encode(
         "utf-8", "ignore"
     )
 )

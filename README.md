@@ -1,19 +1,19 @@
-# ETL PIPELINE v1.0.0
+# Gene Annotator v1.0.0
 ### A gene and annotation query tool
 
 # Introduction 
 
-This application, ETL PIPELINE, is designed to process gene annotation data. It identifies duplicate entries, logs them, removes them, and performs various data transformation steps. The results are saved in the final_results.csv file.
+This application, GENE ANNOTATOR, is designed to process gene annotation data. It identifies duplicate entries, logs them, removes them, and performs various data transformation steps. The results are saved in the final_results.csv file.
 
-# Installation and Setup for Running ETL PIPELINE Locally
-Here are the steps to run ETL PIPELINE from the command-line in your local environment. 
+# Installation and Setup for Running Gene Annotator Locally
+Here are the steps to run Gene Annotator from the command-line in your local environment. 
     
 ## Extraction: 
 Extract all files from the project archive to a location on your filesystem.
 ## CD to your project root and create a virtual environment: 
     # this command will create a Python 3.7 venv in your project root, which makes the project more self-contained
     # conda is used in this example but any package manager should work
-    $ cd ../path/to/tha_vargas
+    $ cd ../path/to/gene_annotator
     $ conda create --prefix ./envs python=3.7
 ## Activate your virtual environment
     # from the project root
@@ -24,7 +24,7 @@ Extract all files from the project archive to a location on your filesystem.
 ## Modify PYTHONPATH for the interpreter in your virtual environment (**This step is crucial. Without it, the program will raise an import error as it won't be able to find necessary modules**):
     # from project root, source the export_python_path helper script 
     # this tells the interpreter where to find custom modules so it can properly import them:
-    $ source ./tha_vargas/helper_scripts/export_python_path.sh
+    $ source ./gene_annotator/helper_scripts/export_python_path.sh
 ## Run the tests
     # change to the test directory and run pytest. It will "discover" tests and run them
     $ cd test/
@@ -33,40 +33,40 @@ Extract all files from the project archive to a location on your filesystem.
 # Usage
 
 ## Print the help message
-Here are two options for printing the help message for ETL PIPELINE
+Here are two options for printing the help message for Gene Annotator
 
-### Option 1: ETL PIPELINE help message locally
+### Option 1: Gene Annotator help message locally
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
-    $ cd tha_vargas/
+    $ cd/gene_annotator/
     $ python ./etl/pipeline.py --help
 
-### Option 2: ETL PIPELINE help message using helper script
+### Option 2: Gene Annotator help message using helper script
     # be sure your virtual environment is activated
     # change to project root and run the helper script
-    $ cd tha_vargas/
+    $ cd/gene_annotator/
     $ python ./helper_scripts/help.sh
 
-## Run the ETL PIPELINE
+## Run the Gene Annotator
 Here are two options for running the pipeline
 
-### Option 1: Run ETL PIPELINE
+### Option 1: Run Gene Annotator
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
-    $ cd tha_vargas/
+    $ cd/gene_annotator/
     $ python ./etl/pipeline.py
 
-### Option 2: Run ETL PIPELINE using helper script
+### Option 2: Run Gene Annotator using helper script
     # be sure your virtual environment is activated
     # change to project root and run the helper script
-    $ cd tha_vargas/
+    $ cd/gene_annotator/
     $ python ./helper_scripts/run_etl.sh
 
-Now you can observe the timestamped output directory in etl/ and check the tha_vargas/etl/output_<timestamp>/logs/pipeline.log for duplicate and unique record counts
+Now you can observe the timestamped output directory in etl/ and check the/gene_annotator/etl/output_<timestamp>/logs/pipeline.log for duplicate and unique record counts
 
 ## Spin up an instance of the Flask server
     # change to the api/ directory in project root and run the app
-    $ cd ./tha_vargas/api
+    $ cd ./gene_annotator/api
     $ ./app.py
 
 ## Use Curl to query annotation data
@@ -74,14 +74,14 @@ Now you can observe the timestamped output directory in etl/ and check the tha_v
 
 
 # Running with Docker
-Here are the steps to build the ETL PIPELINE container and run it
+Here are the steps to build the Gene Annotator container and run it
 
 ## Make sure docker is installed
     $ docker --version
 
 ## Build the docker image
     # cd to project root and run docker build
-    $ cd ../tha_vargas/
+    $ cd ../gene_annotator/
     $ docker build -t etl-pipeline -f ./containers/etl-pipeline-dockerfile .
 
 ## Run the container
