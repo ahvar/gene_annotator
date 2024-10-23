@@ -9,6 +9,6 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
 # Construct PYTHONPATH dynamically based on the project root
-export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/etl:$PROJECT_ROOT/utils:$PROJECT_ROOT/etl/data:$PROJECT_ROOT/test:$PROJECT_ROOT/test/utils"
+export PYTHONPATH="$PROJECT_ROOT:$PROJECT_ROOT/etl:$PROJECT_ROOT/utils:$PROJECT_ROOT/etl/data:$PROJECT_ROOT/test:$PROJECT_ROOT/test/utils:$PROJECT_ROOT/app:$PROJECT_ROOT/app/models"
 
 echo "PYTHONPATH set to: $PYTHONPATH"

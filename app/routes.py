@@ -17,8 +17,10 @@ NOTE:
 from flask import render_template, flash, redirect, url_for, request
 from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
-from app import app
-from app.forms import GeneAnnotationForm, RegistrationForm
+from app import app, db
+from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm
+from app.models.user import User
+import sqlalchemy as sa
 
 
 @app.route("/")
@@ -64,8 +66,6 @@ def login():
     when the URL is relative: urlsplit() and check if netloc component is set or not
 
     """
-    pandl_form = ProfitAndLossForm()
-    trade_form = TradeForm()
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     form = LoginForm()
