@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-ETL Pipeline: Extact Transform Load
+ETL Gene Annotation Pipeline
 """
 import logging
 from pathlib import Path
 import typer
-from typing_extensions import Annotated
+from typing import List
+from typing_extensions import Annotated, Optional
 from utils.logging_utils import LoggingUtils, LogFileCreationError
 from utils.pipeline_utils import (
-    validate_etl_output_dir,
+    validate_outputdir,
     set_error_and_exit,
     init_log_and_results_dir,
     get_logger,
@@ -18,32 +19,50 @@ from utils.references import gene_stable_id_col, hgnc_id_col
 
 cli = typer.Typer()
 
-__version__ = "1.0.0"
+__version__ = "0.1.0"
 __copyright__ = (
-    "Copyright \xa9 2023 Arthur Vargas | All rights reserved.".encode(
+    "Copyright \xa9 2024 Arthur Vargas | All rights reserved.".encode(
         "utf-8", "ignore"
     )
 )
-__Application__ = "ETL_PIPELINE"
-ETL_LOGGER_NAME = __Application__ + "__" + __version__
+__Application__ = "GENE_ANNOTATE"
+GA_LOGGER_NAME = __Application__ + "__" + __version__
 
-etl_logger = logging.getLogger(ETL_LOGGER_NAME)
+etl_logger = logging.getLogger(GA_LOGGER_NAME)
 
+class NextflowRunner():
+    def __init__(self) -> None:
+        pass
+
+    def set_nfx_log(self) -> None:
+        pass
+
+    def set_nfx_workdir(self) -> None:
+        pass
+
+    def build_nxf_cmd(self) -> str:
+        pass
 
 @cli.command(
     context_settings={"allow_extra_args": True, "ignore_unknown_options": True}
 )
 def main(
     ctx: typer.Context,
-    etl_output_dir: Path = typer.Option(
+    genes: Annotated[Optional[List], typer.Option(
+        None,
+        "-g",
+        "--genes",
+        help="Annotate these genes",
+    )],
+    outputdir: Path = typer.Option(
         None,
         "-o",
-        "--etl-output-directory",
+        "--output-directory",
         exists=True,
         file_okay=True,
         dir_okay=False,
         writable=True,
-        callback=validate_etl_output_dir,
+        callback=validate_outputdir,
         help="The ETL pipeline output directory",
     ),
     debug: bool = typer.Option(
@@ -64,23 +83,23 @@ def main(
         else:
             log_level = logging.INFO
 
-        init_log_and_results_dir(etl_output_dir=etl_output_dir)
-        app_log = get_logger(etl_output_dir=etl_output_dir, log_level=log_level)
+        init_log_and_results_dir(etl_output_dir=outputdir)
+        app_log = get_logger(etl_output_dir=outputdir, log_level=log_level)
         app_log.logApplicationStart()
 
-        gene_reader = GeneReader(etl_output_dir.parent / "data")
+        gene_reader = GeneReader(outputdir.parent / "data")
         gene_reader.find_and_load_gene_data()
         gene_reader.log_duplicates()
         gene_reader.remove_duplicates()
         gene_reader.log_unique_records()
-        gene_reader.write_gene_type_count(etl_output_dir / "results")
+        gene_reader.write_gene_type_count(outputdir / "results")
         gene_reader.determine_if_hgnc_id_exists()
         gene_reader.parse_panther_id_suffix()
         gene_reader.merge_gene_and_annotations(
             col_one=gene_stable_id_col, col_two=hgnc_id_col
         )
-        gene_reader.exclude_tigrfram_and_write(etl_output_dir / "results")
-        gene_reader.write_gene_and_annotations_final(etl_output_dir / "results")
+        gene_reader.exclude_tigrfram_and_write(outputdir / "results")
+        gene_reader.write_gene_and_annotations_final(outputdir / "results")
 
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")

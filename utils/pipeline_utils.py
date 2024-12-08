@@ -39,7 +39,7 @@ ETL_LOGGER_NAME = __Application__ + "__" + __version__
 etl_logger = logging.getLogger(ETL_LOGGER_NAME)
 
 
-def validate_etl_output_dir(ctx: typer.Context, etl_output_dir: Path) -> Path:
+def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
     """
     A user has the option to pass ETL pipeline an output dir, otherwise,
     sets default

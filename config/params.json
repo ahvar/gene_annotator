@@ -1,0 +1,6 @@
+{
+    "outputdir": "/opt/eon/log",
+    "log_dir": "/opt/eon/log",
+    "genes": ["gene1", "gene2", "gene3"],
+    "annotation_types": ["type1", "type2", "type3"]
+}

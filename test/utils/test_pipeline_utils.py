@@ -12,7 +12,7 @@ from itertools import chain, repeat
 from pathlib import Path
 from utils.references import pid_suffix_col
 from utils.pipeline_utils import (
-    validate_etl_output_dir,
+    validate_outputdir,
     GeneReader,
     GeneDataException,
     GeneAnnotationException,
@@ -44,7 +44,7 @@ class TestPipelineUtils(unittest.TestCase):
         mock_instance.exists.return_value = False
 
         with self.assertRaises(typer.BadParameter):
-            validate_etl_output_dir(mock_context, mock_path("/path/to/nowhere"))
+            validate_outputdir(mock_context, mock_path("/path/to/nowhere"))
 
         mock_instance.mkdir.assert_not_called()
 
@@ -58,7 +58,7 @@ class TestPipelineUtils(unittest.TestCase):
         mock_path.return_value = mock_instance
 
         with self.assertRaises(typer.BadParameter):
-            validate_etl_output_dir(Mock(), mock_path("/path/to/nonexistent"))
+            validate_outputdir(Mock(), mock_path("/path/to/nonexistent"))
 
 
 class TestGeneReader(unittest.TestCase):
