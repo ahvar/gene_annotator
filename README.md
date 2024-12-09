@@ -1,4 +1,4 @@
-# Gene Annotator v1.0.0
+# Gene Annotator v0.1.0
 ### A gene and annotation query tool
 
 # Introduction 

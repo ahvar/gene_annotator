@@ -18,7 +18,7 @@ from utils.pipeline_utils import (
     GeneAnnotationException,
     gene_annotations_file_name,
     genes_file_name,
-    etl_logger,
+    gene_etl_logger,
 )
 import typer
 from typer import Context
@@ -170,7 +170,7 @@ class TestGeneReader(unittest.TestCase):
         self._gene_reader._genes = genes_data
         self._gene_reader._gene_annotations = annotations_data
 
-        with patch.object(etl_logger, "info") as mock_info:
+        with patch.object(gene_etl_logger, "info") as mock_info:
             self._gene_reader.log_duplicates()
 
             assert len(self._gene_reader._duplicate_genes) == 1
@@ -202,7 +202,7 @@ class TestGeneReader(unittest.TestCase):
         self._gene_reader._genes = genes_data
         self._gene_reader._gene_annotations = annotations_data
 
-        with patch.object(etl_logger, "info") as mock_info:
+        with patch.object(gene_etl_logger, "info") as mock_info:
             self._gene_reader.log_unique_records()
             mock_info.assert_called()
 
