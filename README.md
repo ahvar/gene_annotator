@@ -30,39 +30,29 @@ Extract or clone all files to your local environment.
 
 # Usage
 
-## Print the help message
-Here are two options for printing the help message for Gene Annotator
-
-### Option 1: Gene Annotator help message locally
+### Print Gene Annotator Description
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
-    $ cd/gene_annotator/
+    $ cd /gene_annotator/
     $ python ./gene_annotator
 
-## Run the Gene Annotator
-Here are two options for running the pipeline
+### Configure to Behave as Executable
+You can configure gene_annotator script to behave like a standard Linux utility or system-level executable. This makes your script accessible from the command line just like any other tool installed on your system. You will need administrative privileges so this may not be appropriate in networked environments. 
 
-### Option 1: Run Gene Annotator
-    # be sure your virtual environment is activated
-    # change to project root and run pipeline.py
-    $ cd/gene_annotator/
-    $ python ./etl/pipeline.py
+### Create a symlink to gene_annotate
+In /usr/local/bin, which is included in the system's PATH environment variable, create a symlink to the gene_annotate script. This ensures the script is available to all users on the system.
 
-### Option 2: Run Gene Annotator using helper script
-    # be sure your virtual environment is activated
-    # change to project root and run the helper script
-    $ cd/gene_annotator/
-    $ python ./helper_scripts/run_etl.sh
+```sh
+$ sudo ln -s /path/to/src/gene_annotate /usr/local/bin/gene_annotate
+```
 
-Now you can observe the timestamped output directory in etl/ and check the/gene_annotator/etl/output_<timestamp>/logs/pipeline.log for duplicate and unique record counts
+
 
 ## Spin up an instance of the Flask server
-    # change to the api/ directory in project root and run the app
-    $ cd ./gene_annotator/api
-    $ ./app.py
+TBD
 
 ## Use Curl to query annotation data
- $ curl "http://localhost:5000/genes?gene_stable_id=ENSG00000281775&pid_suffix=SF0"
+TBD
 
 
 # Running with Docker
@@ -74,23 +64,18 @@ Here are the steps to build the Gene Annotator container and run it
 ## Build the docker image
     # cd to project root and run docker build
     $ cd ../gene_annotator/
-    $ docker build -t etl-pipeline -f ./containers/etl-pipeline-dockerfile .
+    $ docker build -t gene_annotate -f ./containers/gene-annotate-dockerfile .
 
 ## Run the container
     # the Dockerfile has an ENTRYPOINT that points to etl/pipeline.py
     # running a container from this image will automatically execute the script
-    $ docker run --name etl_pipeline_container etl-pipeline
+    $ docker run --name gene_annotate_container gene_annotate
 
 ## Run Interactively
     # to inspect output files in the container, run unit tests, or the api/app.py
     # run the container interactively and override the ENTRYPOINT
     # map port '5000' of the host to port '5000' of the container
-    $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name etl_pipeline_container etl-pipeline
-
-
-Now, if ./api/app.py is run inside the container, you should be able to access the service from
-your machine's browser or using a curl command from the terminal
-
+    $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name gene_annotate_container gene_annotate
 
 # Functionality
     - Reads data from genes.csv and gene_annotations.tsv.
