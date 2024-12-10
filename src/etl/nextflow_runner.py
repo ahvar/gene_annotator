@@ -14,8 +14,6 @@ from utils.pipeline_utils import (
     validate_outputdir,
     validate_style,
     set_error_and_exit,
-    init_log_and_results_dir,
-    get_logger,
     GeneReader,
 )
 from src.utils.references import (
@@ -89,9 +87,6 @@ def summarize(
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
-        init_log_and_results_dir(etl_output_dir=outputdir)
-        app_log = get_logger(etl_output_dir=outputdir, log_level=log_level)
-        app_log.logApplicationStart()
         s3 = boto3.client("s3")
         bucket = "genomics-data-repository"
         response = s3.list_objects_v2(Bucket=bucket)
@@ -151,10 +146,6 @@ def annotate(
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
-
-        init_log_and_results_dir(etl_output_dir=outputdir)
-        app_log = get_logger(etl_output_dir=outputdir, log_level=log_level)
-        app_log.logApplicationStart()
 
         gene_reader = GeneReader(outputdir.parent / "data")
         gene_reader.find_and_load_gene_data()

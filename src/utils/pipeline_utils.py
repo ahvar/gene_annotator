@@ -86,7 +86,7 @@ def init_logging(log_level: str) -> LoggingUtils:
     :returns LoggingUtils: logging utility for consistent log formats
     """
     try:
-        timestamp = time.strftime("%Y%m%d%H%M%S")
+        timestamp = datetime.now().strftime("%m%d%yT%H%M%S")
         log_dir = Path("/opt/eon/log") / __Application__ / timestamp
         log_file = log_dir / "app.log"
         log_dir.mkdir(exist_ok=True, parents=True)
@@ -124,10 +124,10 @@ def get_logger(etl_output_dir, log_level) -> LoggingUtils:
     logging_file = "pipeline.log"
     log_dir = etl_output_dir / "logs"
     app_log = LoggingUtils(
-        applicationName=f"{__Application__} {__version__}",
-        logFile=log_dir / logging_file,
-        fileLevel=log_level,
-        consoleLevel=logging.ERROR,
+        application_name=f"{__Application__} {__version__}",
+        log_file=log_dir / logging_file,
+        file_level=log_level,
+        console_level=logging.ERROR,
     )
     return app_log
 
