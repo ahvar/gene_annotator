@@ -33,24 +33,24 @@ class LoggingUtils:
 
     def __init__(
         self,
-        applicationName,
-        logFile: str = None,
-        fileLevel: int = logging.NOTSET,
-        consoleLevel: int = logging.NOTSET,
+        application_name,
+        log_file: str = None,
+        file_level: int = logging.NOTSET,
+        console_level: int = logging.NOTSET,
     ):
         """
         Initialize an instance of the LoggingUtils. This creates an instance of the logging class and sets
         formatting for the log.
         """
         # The name of the application
-        self._app_Name = applicationName
+        self._app_Name = application_name
         # The filename used to write log output
-        self._file_name = logFile
+        self._file_name = log_file
         # The logging level for messages written to the logging file. All messages at this
         # level and higher will be logged.
-        self._file_Level = fileLevel
+        self._file_Level = file_level
         # The level for messages to write to the console.
-        self._console_Level = consoleLevel
+        self._console_Level = console_level
         # Instance of logging.Logger used for logging.
         self._logger = None
         # Handler for writing to the log file.
@@ -74,7 +74,7 @@ class LoggingUtils:
         )
         self._logger = logging.getLogger()
         self._logger.setLevel(logging.DEBUG)
-        if fileLevel:
+        if file_level:
             if not self._file_name:
                 self._file_name = os.path.join(self._app_Name + ".log")
 
@@ -89,7 +89,7 @@ class LoggingUtils:
             self._logger.addHandler(self._file_handler)
 
             self._file_handler.setFormatter(formatter)
-        if consoleLevel:
+        if console_level:
             self._console_handler = logging.StreamHandler()
             self._console_handler.setLevel(self._console_Level)
             self._console_handler.setFormatter(formatter)
@@ -110,7 +110,7 @@ class LoggingUtils:
         # Shutdown
         logging.shutdown()
 
-    def logApplicationStart(self):
+    def log_application_start(self):
         """
         Log the start of an application. This inserts a standard set of information:
             * User name
@@ -120,7 +120,7 @@ class LoggingUtils:
             * Start time
         """
         command = " ".join(sys.argv)
-        start = self._formatDateTime(self._start_date_time)
+        start = self._format_date_time(self._start_date_time)
         self._logger.info(
             "**************************************************************"
         )
@@ -133,12 +133,12 @@ class LoggingUtils:
             "**************************************************************"
         )
 
-    def logApplicationFinish(self):
+    def log_application_finish(self):
         """
         Log the finish of an application. This inserts the following information:
         """
         self._finish_date_time = datetime.now()
-        finish = self._formatDateTime(self._finish_date_time)
+        finish = self._format_date_time(self._finish_date_time)
         elapsedTime = self._finish_date_time - self._start_date_time
         self._logger.info(
             "**************************************************************"
@@ -150,7 +150,7 @@ class LoggingUtils:
             "**************************************************************"
         )
 
-    def _formatDateTime(self, rawDateTime):
+    def _format_date_time(self, rawDateTime):
         """
         Formats a time value in a human-readable format.
         """

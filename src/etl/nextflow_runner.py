@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 import typer
 import boto3
+from rich import print as rprint
 from typing import List
 from typing_extensions import Annotated, Optional
 from utils.logging_utils import LoggingUtils, LogFileCreationError
@@ -13,20 +14,17 @@ from utils.pipeline_utils import (
     validate_outputdir,
     validate_style,
     set_error_and_exit,
-    init_log_and_results_dir,
-    get_logger,
     GeneReader,
 )
-from utils.references import gene_stable_id_col, hgnc_id_col
+from src.utils.references import (
+    GA_LOGGER_NAME,
+    __version__,
+    __Application__,
+    gene_stable_id_col,
+    hgnc_id_col,
+)
 
 cli = typer.Typer()
-
-__version__ = "0.1.0"
-__copyright__ = "Copyright \xa9 2024 Arthur Vargas | All rights reserved.".encode(
-    "utf-8", "ignore"
-)
-__Application__ = "GENE_ANNOTATE"
-GA_LOGGER_NAME = __Application__ + "__" + __version__
 
 gene_etl_logger = logging.getLogger(GA_LOGGER_NAME)
 
@@ -84,18 +82,26 @@ def summarize(
     """
     Describe the datasets that are available
     """
-
     try:
+        if debug:
+            log_level = logging.DEBUG
+        else:
+            log_level = logging.INFO
         s3 = boto3.client("s3")
         bucket = "genomics-data-repository"
         response = s3.list_objects_v2(Bucket=bucket)
+        if style == "json":
+            rprint(response)
+        else:
+            for obj in response["Contents"]:
+                rprint(f"Key: {obj['Key']} Size: {obj['Size']}")
 
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
     except Exception as err:
         set_error_and_exit(f"Unable to initiate Application: {err}")
     finally:
-        app_log.logApplicationFinish()
+        gene_etl_logger.logApplicationFinish()
 
 
 @cli.command(
@@ -140,10 +146,6 @@ def annotate(
             log_level = logging.DEBUG
         else:
             log_level = logging.INFO
-
-        init_log_and_results_dir(etl_output_dir=outputdir)
-        app_log = get_logger(etl_output_dir=outputdir, log_level=log_level)
-        app_log.logApplicationStart()
 
         gene_reader = GeneReader(outputdir.parent / "data")
         gene_reader.find_and_load_gene_data()
