@@ -6,7 +6,7 @@ import typer
 import logging
 import sys
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, time
 import pandas as pd
 from utils.logging_utils import LoggingUtils, LogFileCreationError
 from utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
@@ -25,6 +25,7 @@ from utils.references import (
     excluded_tigrfam_vals,
     final_results_file_name,
     summary_styles,
+    GA_LOGGER_NAME,
 )
 
 __version__ = "0.1.0"
@@ -77,6 +78,30 @@ def validate_style(ctx: typer.Context, style: str) -> str:
     return style
 
 
+def init_logging(log_level: str) -> LoggingUtils:
+    """
+    Initiate app log
+
+    :params     log_level: the log level
+    :returns LoggingUtils: logging utility for consistent log formats
+    """
+    try:
+        timestamp = datetime.now().strftime("%m%d%yT%H%M%S")
+        log_dir = Path("/opt/eon/log") / __Application__ / timestamp
+        log_file = log_dir / "app.log"
+        log_dir.mkdir(exist_ok=True, parents=True)
+
+        logging_utils = LoggingUtils(
+            application_name=GA_LOGGER_NAME,
+            log_file=log_file,
+            file_level=log_level,
+            console_level=logging.ERROR,
+        )
+        return logging_utils
+    except LogFileCreationError as lfe:
+        set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
+
+
 def init_log_and_results_dir(etl_output_dir: Path) -> None:
     """
     Create the results and log output directories
@@ -99,10 +124,10 @@ def get_logger(etl_output_dir, log_level) -> LoggingUtils:
     logging_file = "pipeline.log"
     log_dir = etl_output_dir / "logs"
     app_log = LoggingUtils(
-        applicationName=f"{__Application__} {__version__}",
-        logFile=log_dir / logging_file,
-        fileLevel=log_level,
-        consoleLevel=logging.ERROR,
+        application_name=f"{__Application__} {__version__}",
+        log_file=log_dir / logging_file,
+        file_level=log_level,
+        console_level=logging.ERROR,
     )
     return app_log
 
