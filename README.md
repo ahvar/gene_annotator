@@ -1,32 +1,30 @@
 # Gene Annotator v0.1.0
-### A gene and annotation query tool
+### A gene annotation, query, and QC tool
 
 # Introduction 
+Annotate genomic data
 
-This application, GENE ANNOTATOR, is designed to process gene annotation data. It identifies duplicate entries, logs them, removes them, and performs various data transformation steps. The results are saved in the final_results.csv file.
-
-# Installation and Setup for Running Gene Annotator Locally
+# Run Gene Annotator Locally
 Here are the steps to run Gene Annotator from the command-line in your local environment. 
     
 ## Extraction: 
-Extract all files from the project archive to a location on your filesystem.
+Extract or clone all files to your local environment.
 ## CD to your project root and create a virtual environment: 
-    # this command will create a Python 3.7 venv in your project root, which makes the project more self-contained
-    # conda is used in this example but any package manager should work
-    $ cd ../path/to/gene_annotator
-    $ conda create --prefix ./envs python=3.7
+    # create a Python 3.12 venv in your project root
+    # conda is used in this example
+    $ cd ../path/to/project-root
+    $ conda create --prefix ./envs python=3.12
 ## Activate your virtual environment
     # from the project root
     $ conda activate ./envs
 ## Install dependencies:
-    # from project root, pip install dependencies defined in requirements.txt
+    # pip install dependencies defined
     $ pip install -r requirements.txt
-## Modify PYTHONPATH for the interpreter in your virtual environment (**This step is crucial. Without it, the program will raise an import error as it won't be able to find necessary modules**):
+## Modify PYTHONPATH for the interpreter in your virtual environment
     # from project root, source the export_python_path helper script 
-    # this tells the interpreter where to find custom modules so it can properly import them:
     $ source ./gene_annotator/helper_scripts/export_python_path.sh
 ## Run the tests
-    # change to the test directory and run pytest. It will "discover" tests and run them
+    # change to the test directory and run pytest.
     $ cd test/
     $ pytest -vv
 
@@ -39,13 +37,7 @@ Here are two options for printing the help message for Gene Annotator
     # be sure your virtual environment is activated
     # change to project root and run pipeline.py
     $ cd/gene_annotator/
-    $ python ./etl/pipeline.py --help
-
-### Option 2: Gene Annotator help message using helper script
-    # be sure your virtual environment is activated
-    # change to project root and run the helper script
-    $ cd/gene_annotator/
-    $ python ./helper_scripts/help.sh
+    $ python ./gene_annotator
 
 ## Run the Gene Annotator
 Here are two options for running the pipeline
