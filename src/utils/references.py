@@ -1,8 +1,16 @@
 """
 Useful variables for later reference
 """
+
 from typing import Any
 from dataclasses import dataclass, field
+
+__version__ = "0.1.0"
+__copyright__ = "Copyright \xa9 2024 Arthur Vargas | All rights reserved.".encode(
+    "utf-8", "ignore"
+)
+__Application__ = "GENE_ANNOTATE"
+GA_LOGGER_NAME = __Application__ + "__" + __version__
 
 genes_file_name = "genes.csv"
 gene_annotations_file_name = "gene_annotation.tsv"
