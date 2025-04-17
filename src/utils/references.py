@@ -9,8 +9,10 @@ __version__ = "0.1.0"
 __copyright__ = "Copyright \xa9 2024 Arthur Vargas | All rights reserved.".encode(
     "utf-8", "ignore"
 )
-__Application__ = "GENE_ANNOTATE"
-GA_LOGGER_NAME = __Application__ + "__" + __version__
+__Application__ = "GENE_ANNOTATOR"
+
+GENE_ANNOTATOR_CLI = f"{__Application__}_{__version__}_cli"
+GENE_ANNOTATOR_FRONTEND = f"{__Application__}_{__version__}_frontend"
 
 genes_file_name = "genes.csv"
 gene_annotations_file_name = "gene_annotation.tsv"

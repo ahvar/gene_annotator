@@ -1,8 +1,5 @@
 """
-LoggingUtils.py
-
-This file contains a class with utilities to facilitate consistent logging
-patterns.
+Utility for standard logging patterns.
 """
 
 import logging

@@ -1,8 +1,7 @@
 # Gene Annotator v0.1.0
-### A gene annotation, query, and QC tool
 
 # Introduction 
-Annotate genomic data
+ETL pipeline and API for duplicate and unique record identification. 
 
 # Run Gene Annotator Locally
 Here are the steps to run Gene Annotator from the command-line in your local environment. 
@@ -45,8 +44,6 @@ In /usr/local/bin, which is included in the system's PATH environment variable, 
 ```sh
 $ sudo ln -s /path/to/src/gene_annotate /usr/local/bin/gene_annotate
 ```
-
-
 
 ## Spin up an instance of the Flask server
 TBD

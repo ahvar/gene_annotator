@@ -1,29 +1,4 @@
-"""
-User Login Form
 
-NOTE:
-    -----------
-    Extensions:
-    -----------
-    The four classes that represent the field types that I'm using for this form are imported directly from the WTForms package.
-    Flask-WTF extension does not provide customized versions.
-
-    -----------
-    Validators:
-    -----------
-    The optional validators argument is used to attach validation behaviors to fields. The DataRequired validator checks that the
-    field is not submitted empty.
-    When you add any methods that match the pattern validate_<field_name>,
-    WTForms takes those as custom validators and invokes them in addition
-    to stock validators.
-
-    -----------------
-    Database Queries:
-    -----------------
-    Note how the two validation queries are issued. These queries will never find more than one result, so instead of running them
-    with db.session.scalars() I'm using db.session.scalar() in singular, which returns None if there are no results, or else the
-    first result.
-"""
 
 from flask_wtf import FlaskForm
 from wtforms import (
@@ -37,7 +12,7 @@ from wtforms import (
 from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
 import sqlalchemy as sa
 from app import db
-from app.models.user import User
+from src.app.models.researcher import Researcher
 
 
 class LoginForm(FlaskForm):
