@@ -104,7 +104,7 @@ def _make_logfile_parent_dir_and_get_path() -> Path:
             Path("/opt/eon/log")
             / __Application__
             / __version__.replace(".", "_")
-            / time.strftime("%Y%m%d%H%M%S")
+            / datetime.now().strftime("%Y%m%d%H%M%S")
         )
         logfile_parent.mkdir(exist_ok=True, parents=True)
         return logfile_parent

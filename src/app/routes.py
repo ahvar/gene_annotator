@@ -3,7 +3,7 @@ from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
 from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm
-from src.app.models.researcher import User
+from src.app.models.researcher import Researcher
 import sqlalchemy as sa
 
 
