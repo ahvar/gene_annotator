@@ -25,17 +25,14 @@ from utils.references import (
     excluded_tigrfam_vals,
     final_results_file_name,
     summary_styles,
-    GA_LOGGER_NAME,
+    GENE_ANNOTATOR_CLI,
+    GENE_ANNOTATOR_FRONTEND,
+    __Application__,
+    __version__,
 )
 
-__version__ = "0.1.0"
-__copyright__ = "Copyright \xa9 2024  | " "Arthur Vargas. All rights reserved.".encode(
-    "utf-8", "ignore"
-)
-__Application__ = "GENE_ANNOTATE"
-GA_LOGGER_NAME = __Application__ + "__" + __version__
-
-gene_etl_logger = logging.getLogger(GA_LOGGER_NAME)
+gene_annotator_cli_logger = logging.getLogger(GENE_ANNOTATOR_CLI)
+gene_annotator_frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
 
 
 def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -51,11 +48,11 @@ def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
     if etl_output_dir and not etl_output_dir.exists():
-        gene_etl_logger.error(f"The output directory for GATE: {etl_output_dir}")
+        gene_annotator_cli_logger.error(f"The output directory for GATE: {etl_output_dir}")
         raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
     if not etl_output_dir:
-        gene_etl_logger.debug("Creating default output directory and logfile....")
-        gene_etl_logger.debug("../etl/output_<timestamp>/")
+        gene_annotator_cli_logger.debug("Creating default output directory and logfile....")
+        gene_annotator_cli_logger.debug("../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
         project_root = current_file_path.parent.parent
         etl_output_dir = project_root / "etl" / f"output_{timestamp}"
@@ -73,12 +70,12 @@ def validate_style(ctx: typer.Context, style: str) -> str:
     if style == None:
         return summary_styles[0]
     if style.lower() not in summary_styles:
-        gene_etl_logger.debug(f"Available summary styles: {summary_styles}")
+        gene_annotator_cli_logger.debug(f"Available summary styles: {summary_styles}")
         return summary_styles[0]
     return style
 
 
-def init_logging(log_level: str) -> LoggingUtils:
+def init_cli_logging(log_level: str) -> LoggingUtils:
     """
     Initiate app log
 
@@ -92,7 +89,35 @@ def init_logging(log_level: str) -> LoggingUtils:
         log_dir.mkdir(exist_ok=True, parents=True)
 
         logging_utils = LoggingUtils(
-            application_name=GA_LOGGER_NAME,
+            application_name=GENE_ANNOTATOR_CLI,
+            log_file=log_file,
+            file_level=log_level,
+            console_level=logging.ERROR,
+        )
+        return logging_utils
+    except LogFileCreationError as lfe:
+        set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
+
+def _make_logfile_parent_dir_and_get_path() -> Path:
+    try:
+        logfile_parent = (
+            Path("/opt/eon/log")
+            / __Application__
+            / __version__.replace(".", "_")
+            / time.strftime("%Y%m%d%H%M%S")
+        )
+        logfile_parent.mkdir(exist_ok=True, parents=True)
+        return logfile_parent
+    except LogFileCreationError as lfe:
+        set_error_and_exit(f"Unable to create logfile parent dir: {lfe.filespec}")
+
+def init_frontend_logger(log_level: str) -> LoggingUtils:
+    try:
+        logfile_parent = _make_logfile_parent_dir_and_get_path()
+        log_file = logfile_parent / f"{GENE_ANNOTATOR_FRONTEND}.log"
+
+        logging_utils = LoggingUtils(
+            application_name=GENE_ANNOTATOR_FRONTEND,
             log_file=log_file,
             file_level=log_level,
             console_level=logging.ERROR,
@@ -156,7 +181,7 @@ class GeneReader:
         Construct GeneReader
         :params data_dir: the data directory; expected to be ../etl/data
         """
-        gene_etl_logger.debug(f"Constructing {self.__class__.__name__}...")
+        gene_annotator_cli_logger.debug(f"Constructing {self.__class__.__name__}...")
         self._data_dir = data_dir
         self._genes = pd.DataFrame()
         self._gene_annotations = pd.DataFrame()
@@ -164,7 +189,7 @@ class GeneReader:
         self._duplicate_annotations = pd.DataFrame()
         self._results = pd.DataFrame()
         self._merged_genes_and_annotation_data = pd.DataFrame()
-        gene_etl_logger.debug("Construction successful")
+        gene_annotator_cli_logger.debug("Construction successful")
 
     def find_and_load_gene_data(self) -> None:
         """
@@ -173,7 +198,7 @@ class GeneReader:
         :params       data_type: a the data type to read from the MAGE directory
         :raise FileNotFoundError: if the directory is invalid
         """
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(
             f"{self.__class__.__name__} is preparing to load gene and annotation data..."
         )
         if not self._data_dir.exists() or not self._data_dir.is_dir():
@@ -182,7 +207,7 @@ class GeneReader:
             )
         self._check_that_dataset_exists(genes_file_name)
         self._check_that_dataset_exists(gene_annotations_file_name)
-        gene_etl_logger.debug(
+        gene_annotator_cli_logger.debug(
             f"{self.__class__.__name__} is reading gene and annotation data..."
         )
         self._gene_annotations = pd.read_csv(
@@ -198,7 +223,7 @@ class GeneReader:
         :raise       GeneDataException: if an error finding the gene dataset
         :rasie   FileNotFoundException: if error finding any file or if path is not a file
         """
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(
             f"{self.__class__.__name__} is checking that {data_set_file_name} datasets exist..."
         )
         try:
@@ -226,15 +251,15 @@ class GeneReader:
         """
         Log the number of duplicate records in genes and annotations
         """
-        gene_etl_logger.info(f"{self.__class__.__name__} is finding duplicates...")
+        gene_annotator_cli_logger.info(f"{self.__class__.__name__} is finding duplicates...")
         self._duplicate_genes = self._genes[self._genes.duplicated()]
         self._duplicate_annotations = self._gene_annotations[
             self._gene_annotations.duplicated()
         ]
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(
             f"DUPLICATE_RECORD_COUNT: {genes_file_name} - {len(self._duplicate_genes)}"
         )
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(
             f"DUPLICATE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._duplicate_annotations)}"
         )
 
@@ -242,7 +267,7 @@ class GeneReader:
         """
         Remove duplicate genes and annotations
         """
-        gene_etl_logger.info(f"{self.__class__.__name__} is removing duplicates...")
+        gene_annotator_cli_logger.info(f"{self.__class__.__name__} is removing duplicates...")
         self._genes = self._genes.drop_duplicates()
         self._gene_annotations = self._gene_annotations.drop_duplicates()
 
@@ -250,11 +275,11 @@ class GeneReader:
         """
         Log number of unique genes and annotations
         """
-        gene_etl_logger.info(f"{self.__class__.__name__} logging unique records...")
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(f"{self.__class__.__name__} logging unique records...")
+        gene_annotator_cli_logger.info(
             f"UNIQUE_RECORD_COUNT: {genes_file_name} - {len(self._genes)}"
         )
-        gene_etl_logger.info(
+        gene_annotator_cli_logger.info(
             f"UNIQUE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._gene_annotations)}"
         )
 
@@ -263,7 +288,7 @@ class GeneReader:
         Writes the gene_type count to an output file: gene_type_count.csv
         :params results_dir: the results output directory
         """
-        gene_etl_logger.info(f"{self.__class__.__name__} writing gene type count...")
+        gene_annotator_cli_logger.info(f"{self.__class__.__name__} writing gene type count...")
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
         gene_type_counts.columns = [gene_type_col, count_col]
         gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
@@ -324,7 +349,7 @@ class GeneReader:
          This selects only those rows from genes_and_annotations that
          don't meet the conditions specified.
         """
-        gene_etl_logger.info(f"{self.__class__.__name__} logging final records...")
+        gene_annotator_cli_logger.info(f"{self.__class__.__name__} logging final records...")
         final_result = self._merged_genes_and_annotation_data[
             ~(
                 (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
@@ -335,7 +360,7 @@ class GeneReader:
                 )
             )
         ]
-        gene_etl_logger.info(f"FINAL_RECORD_COUNT: {len(final_result)}")
+        gene_annotator_cli_logger.info(f"FINAL_RECORD_COUNT: {len(final_result)}")
         final_result.to_csv(results_dir / final_results_file_name)
 
     @property

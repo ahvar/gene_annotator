@@ -1,8 +1,5 @@
 """
-LoggingUtils.py
-
-This file contains a class with utilities to facilitate consistent logging
-patterns.
+Utility for standard logging patterns.
 """
 
 import logging
@@ -11,6 +8,7 @@ import getpass
 import platform
 import sys
 from datetime import datetime, timedelta
+from logging.handlers import RotatingFileHandler
 
 
 class LogFileCreationError(Exception):
@@ -79,9 +77,7 @@ class LoggingUtils:
                 self._file_name = os.path.join(self._app_Name + ".log")
 
             try:
-                self._file_handler = logging.FileHandler(
-                    self._file_name, encoding="UTF-8"
-                )
+                self._file_handler = RotatingFileHandler(self._file_name, maxBytes=10240, backupCount=10, encoding="UTF-8")
             except IOError:
                 raise LogFileCreationError(self._file_name)
 
@@ -149,6 +145,14 @@ class LoggingUtils:
         self._logger.info(
             "**************************************************************"
         )
+
+    def update_file_handler_log_level(self, level):
+        """
+        Update the log level for the file handler.
+        """
+        for handler in self._logger.handlers:
+            if isinstance(handler, logging.FileHandler):
+                handler.setLevel(level)
 
     def _format_date_time(self, rawDateTime):
         """

@@ -1,1 +1,1 @@
-FLASK_APP=app.gene_annotate
+FLASK_APP=src.app.gene_annotate
