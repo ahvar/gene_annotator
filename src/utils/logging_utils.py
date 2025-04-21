@@ -77,7 +77,9 @@ class LoggingUtils:
                 self._file_name = os.path.join(self._app_Name + ".log")
 
             try:
-                self._file_handler = RotatingFileHandler(self._file_name, maxBytes=10240, backupCount=10, encoding="UTF-8")
+                self._file_handler = RotatingFileHandler(
+                    self._file_name, maxBytes=10240, backupCount=10, encoding="UTF-8"
+                )
             except IOError:
                 raise LogFileCreationError(self._file_name)
 

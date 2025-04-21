@@ -5,6 +5,7 @@ Utility functions for ETL pipeline
 import typer
 import logging
 import sys
+import os
 from pathlib import Path
 from datetime import datetime, time
 import pandas as pd
@@ -48,16 +49,38 @@ def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
     if etl_output_dir and not etl_output_dir.exists():
-        gene_annotator_cli_logger.error(f"The output directory for GATE: {etl_output_dir}")
+        gene_annotator_cli_logger.error(
+            f"The output directory for GATE: {etl_output_dir}"
+        )
         raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
     if not etl_output_dir:
-        gene_annotator_cli_logger.debug("Creating default output directory and logfile....")
+        gene_annotator_cli_logger.debug(
+            "Creating default output directory and logfile...."
+        )
         gene_annotator_cli_logger.debug("../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
         project_root = current_file_path.parent.parent
-        etl_output_dir = project_root / "etl" / f"output_{timestamp}"
-        etl_output_dir.mkdir()
+        etl_output_dir = project_root / "etl" / f"output_{timestamp}" / "results"
+        etl_output_dir.mkdir(parents=True)
     return etl_output_dir
+
+
+def validate_inputdir(ctx: typer.Context, etl_input_dir: Path) -> Path:
+    """
+    A user has the option to pass ETL pipeline an input directory
+
+    :param ctx:               the typer context object
+    :param etl_input_dir:    the input directory for ETL Pipeline
+    """
+    if not etl_input_dir or not etl_input_dir.exists() or not etl_input_dir.is_dir():
+        raise typer.BadParameter(
+            f"Input directory '{etl_input_dir}' does not exist or is not a directory"
+        )
+    if not os.access(etl_input_dir, os.R_OK):
+        raise typer.BadParameter(f"Cannot read from input directory '{etl_input_dir}' ")
+    if not any(etl_input_dir.iterdir()):
+        raise typer.BadParameter(f"Input directory '{etl_input_dir}' is empty")
+    return etl_input_dir
 
 
 def validate_style(ctx: typer.Context, style: str) -> str:
@@ -98,6 +121,7 @@ def init_cli_logging(log_level: str) -> LoggingUtils:
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
 
+
 def _make_logfile_parent_dir_and_get_path() -> Path:
     try:
         logfile_parent = (
@@ -110,6 +134,7 @@ def _make_logfile_parent_dir_and_get_path() -> Path:
         return logfile_parent
     except LogFileCreationError as lfe:
         set_error_and_exit(f"Unable to create logfile parent dir: {lfe.filespec}")
+
 
 def init_frontend_logger(log_level: str) -> LoggingUtils:
     try:
@@ -176,13 +201,13 @@ class GeneReader:
      - counting unique genes
     """
 
-    def __init__(self, data_dir: Path):
+    def __init__(self, input_dir: Path):
         """
         Construct GeneReader
-        :params data_dir: the data directory; expected to be ../etl/data
+        :params data_dir: the input directory
         """
         gene_annotator_cli_logger.debug(f"Constructing {self.__class__.__name__}...")
-        self._data_dir = data_dir
+        self._input_dir = input_dir
         self._genes = pd.DataFrame()
         self._gene_annotations = pd.DataFrame()
         self._duplicate_genes = pd.DataFrame()
@@ -195,15 +220,15 @@ class GeneReader:
         """
         Gene and annotations data is expected to exist in data_dir
 
-        :params       data_type: a the data type to read from the MAGE directory
+        :params       data_type: a the data type to read from the directory
         :raise FileNotFoundError: if the directory is invalid
         """
         gene_annotator_cli_logger.info(
             f"{self.__class__.__name__} is preparing to load gene and annotation data..."
         )
-        if not self._data_dir.exists() or not self._data_dir.is_dir():
+        if not self._input_dir.exists() or not self._input_dir.is_dir():
             raise FileNotFoundError(
-                f"The directory {self._data_dir} in {self.__class__.__name__} does not exist or is not a directory."
+                f"The directory {self._input_dir} in {self.__class__.__name__} does not exist or is not a directory."
             )
         self._check_that_dataset_exists(genes_file_name)
         self._check_that_dataset_exists(gene_annotations_file_name)
@@ -211,9 +236,9 @@ class GeneReader:
             f"{self.__class__.__name__} is reading gene and annotation data..."
         )
         self._gene_annotations = pd.read_csv(
-            self._data_dir / gene_annotations_file_name, delimiter="\t"
+            self._input_dir / gene_annotations_file_name, delimiter="\t"
         )
-        self._genes = pd.read_csv(self._data_dir / genes_file_name)
+        self._genes = pd.read_csv(self._input_dir / genes_file_name)
 
     def _check_that_dataset_exists(self, data_set_file_name: str) -> None:
         """
@@ -227,16 +252,16 @@ class GeneReader:
             f"{self.__class__.__name__} is checking that {data_set_file_name} datasets exist..."
         )
         try:
-            data_file = list(self._data_dir.glob(f"*{data_set_file_name}"))[0]
+            data_file = list(self._input_dir.glob(f"*{data_set_file_name}"))[0]
             if data_file:
                 if not data_file.exists() or not data_file.is_file():
                     if data_set_file_name.endswith(".tsv"):
                         raise GeneAnnotationException(
-                            f"The directory {self._data_dir} in {self.__class__.__name__} does not have {gene_annotations_file_name}"
+                            f"The directory {self._input_dir} in {self.__class__.__name__} does not have {gene_annotations_file_name}"
                         )
                     if data_set_file_name.endswith(".csv"):
                         raise GeneDataException(
-                            f"The directory {self._data_dir} in {self.__class__.__name__} does not have {genes_file_name}"
+                            f"The directory {self._input_dir} in {self.__class__.__name__} does not have {genes_file_name}"
                         )
 
                     raise FileNotFoundError(
@@ -251,7 +276,9 @@ class GeneReader:
         """
         Log the number of duplicate records in genes and annotations
         """
-        gene_annotator_cli_logger.info(f"{self.__class__.__name__} is finding duplicates...")
+        gene_annotator_cli_logger.info(
+            f"{self.__class__.__name__} is finding duplicates..."
+        )
         self._duplicate_genes = self._genes[self._genes.duplicated()]
         self._duplicate_annotations = self._gene_annotations[
             self._gene_annotations.duplicated()
@@ -267,7 +294,9 @@ class GeneReader:
         """
         Remove duplicate genes and annotations
         """
-        gene_annotator_cli_logger.info(f"{self.__class__.__name__} is removing duplicates...")
+        gene_annotator_cli_logger.info(
+            f"{self.__class__.__name__} is removing duplicates..."
+        )
         self._genes = self._genes.drop_duplicates()
         self._gene_annotations = self._gene_annotations.drop_duplicates()
 
@@ -275,7 +304,9 @@ class GeneReader:
         """
         Log number of unique genes and annotations
         """
-        gene_annotator_cli_logger.info(f"{self.__class__.__name__} logging unique records...")
+        gene_annotator_cli_logger.info(
+            f"{self.__class__.__name__} logging unique records..."
+        )
         gene_annotator_cli_logger.info(
             f"UNIQUE_RECORD_COUNT: {genes_file_name} - {len(self._genes)}"
         )
@@ -288,7 +319,9 @@ class GeneReader:
         Writes the gene_type count to an output file: gene_type_count.csv
         :params results_dir: the results output directory
         """
-        gene_annotator_cli_logger.info(f"{self.__class__.__name__} writing gene type count...")
+        gene_annotator_cli_logger.info(
+            f"{self.__class__.__name__} writing gene type count..."
+        )
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
         gene_type_counts.columns = [gene_type_col, count_col]
         gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
@@ -349,7 +382,9 @@ class GeneReader:
          This selects only those rows from genes_and_annotations that
          don't meet the conditions specified.
         """
-        gene_annotator_cli_logger.info(f"{self.__class__.__name__} logging final records...")
+        gene_annotator_cli_logger.info(
+            f"{self.__class__.__name__} logging final records..."
+        )
         final_result = self._merged_genes_and_annotation_data[
             ~(
                 (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
@@ -364,20 +399,20 @@ class GeneReader:
         final_result.to_csv(results_dir / final_results_file_name)
 
     @property
-    def data_dir(self) -> Path:
+    def input_dir(self) -> Path:
         """
         Returns the data directory
         :return data_dir: the data directory
         """
-        return self._data_dir
+        return self._input_dir
 
-    @data_dir.setter
-    def data_dir(self, data_dir: Path) -> None:
+    @input_dir.setter
+    def input_dir(self, data_dir: Path) -> None:
         """
         Sets the data directory
         :params data_dir: the data directory
         """
-        self._data_dir = data_dir
+        self._input_dir = data_dir
 
     @property
     def genes(self) -> pd.DataFrame:
