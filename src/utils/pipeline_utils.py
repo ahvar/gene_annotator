@@ -7,8 +7,9 @@ import logging
 import sys
 import os
 from pathlib import Path
-from datetime import datetime, time
+from datetime import datetime, time, UTC
 import pandas as pd
+from glob import glob
 from utils.logging_utils import LoggingUtils, LogFileCreationError
 from utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
 from utils.references import (
@@ -32,8 +33,30 @@ from utils.references import (
     __version__,
 )
 
-gene_annotator_cli_logger = logging.getLogger(GENE_ANNOTATOR_CLI)
+pipeline_logger = logging.getLogger(GENE_ANNOTATOR_CLI)
 gene_annotator_frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
+
+
+def _parse_timestamp(dir_path: Path) -> datetime:
+    try:
+        timestamp_str = dir_path.name.split('_')[1]
+        return datetime.strptime(timestamp_str, "%m%d%yT%H%M%S")
+    except (IndexError, ValueError):
+        pipeline_logger.error(f"An error occurred while parsing output directory timestamps")
+        return datetime.min
+
+
+def find_latest_output_dir(root_etl_dir: Path=None) -> Path:
+    """
+    """
+    if not root_etl_dir:
+        project_root = Path(__file__).resolve().parent.parent
+        root_etl_dir = project_root / "etl"
+    output_dirs = [dir for dir in root_etl_dir.glob("output_*") if dir.is_dir()]
+    if not output_dirs:
+        return None
+    latest_dir = sorted(output_dirs, key=_parse_timestamp, reverse=True)[0]
+    return latest_dir / "results"
 
 
 def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -44,20 +67,20 @@ def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
     :param ctx:               the typer context object
     :param etl_output_dir:    the output directory for ETL Pipeline
     """
-    timestamp = datetime.utcnow().strftime("%m%d%yT%H%M%S")
+    timestamp = datetime.now(UTC).strftime("%m%d%yT%H%M%S")
     if etl_output_dir and etl_output_dir.exists():
         user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
     if etl_output_dir and not etl_output_dir.exists():
-        gene_annotator_cli_logger.error(
+        pipeline_logger.error(
             f"The output directory for GATE: {etl_output_dir}"
         )
         raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
     if not etl_output_dir:
-        gene_annotator_cli_logger.debug(
+        pipeline_logger.debug(
             "Creating default output directory and logfile...."
         )
-        gene_annotator_cli_logger.debug("../etl/output_<timestamp>/")
+        pipeline_logger.debug("../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
         project_root = current_file_path.parent.parent
         etl_output_dir = project_root / "etl" / f"output_{timestamp}" / "results"
@@ -93,7 +116,7 @@ def validate_style(ctx: typer.Context, style: str) -> str:
     if style == None:
         return summary_styles[0]
     if style.lower() not in summary_styles:
-        gene_annotator_cli_logger.debug(f"Available summary styles: {summary_styles}")
+        pipeline_logger.debug(f"Available summary styles: {summary_styles}")
         return summary_styles[0]
     return style
 
@@ -206,7 +229,7 @@ class GeneReader:
         Construct GeneReader
         :params data_dir: the input directory
         """
-        gene_annotator_cli_logger.debug(f"Constructing {self.__class__.__name__}...")
+        pipeline_logger.debug(f"Constructing {self.__class__.__name__}...")
         self._input_dir = input_dir
         self._genes = pd.DataFrame()
         self._gene_annotations = pd.DataFrame()
@@ -214,7 +237,7 @@ class GeneReader:
         self._duplicate_annotations = pd.DataFrame()
         self._results = pd.DataFrame()
         self._merged_genes_and_annotation_data = pd.DataFrame()
-        gene_annotator_cli_logger.debug("Construction successful")
+        pipeline_logger.debug("Construction successful")
 
     def find_and_load_gene_data(self) -> None:
         """
@@ -223,7 +246,7 @@ class GeneReader:
         :params       data_type: a the data type to read from the directory
         :raise FileNotFoundError: if the directory is invalid
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} is preparing to load gene and annotation data..."
         )
         if not self._input_dir.exists() or not self._input_dir.is_dir():
@@ -232,7 +255,7 @@ class GeneReader:
             )
         self._check_that_dataset_exists(genes_file_name)
         self._check_that_dataset_exists(gene_annotations_file_name)
-        gene_annotator_cli_logger.debug(
+        pipeline_logger.debug(
             f"{self.__class__.__name__} is reading gene and annotation data..."
         )
         self._gene_annotations = pd.read_csv(
@@ -248,7 +271,7 @@ class GeneReader:
         :raise       GeneDataException: if an error finding the gene dataset
         :rasie   FileNotFoundException: if error finding any file or if path is not a file
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} is checking that {data_set_file_name} datasets exist..."
         )
         try:
@@ -276,17 +299,17 @@ class GeneReader:
         """
         Log the number of duplicate records in genes and annotations
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} is finding duplicates..."
         )
         self._duplicate_genes = self._genes[self._genes.duplicated()]
         self._duplicate_annotations = self._gene_annotations[
             self._gene_annotations.duplicated()
         ]
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"DUPLICATE_RECORD_COUNT: {genes_file_name} - {len(self._duplicate_genes)}"
         )
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"DUPLICATE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._duplicate_annotations)}"
         )
 
@@ -294,7 +317,7 @@ class GeneReader:
         """
         Remove duplicate genes and annotations
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} is removing duplicates..."
         )
         self._genes = self._genes.drop_duplicates()
@@ -304,13 +327,13 @@ class GeneReader:
         """
         Log number of unique genes and annotations
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} logging unique records..."
         )
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"UNIQUE_RECORD_COUNT: {genes_file_name} - {len(self._genes)}"
         )
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"UNIQUE_RECORD_COUNT: {gene_annotations_file_name} - {len(self._gene_annotations)}"
         )
 
@@ -319,7 +342,7 @@ class GeneReader:
         Writes the gene_type count to an output file: gene_type_count.csv
         :params results_dir: the results output directory
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} writing gene type count..."
         )
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
@@ -382,7 +405,7 @@ class GeneReader:
          This selects only those rows from genes_and_annotations that
          don't meet the conditions specified.
         """
-        gene_annotator_cli_logger.info(
+        pipeline_logger.info(
             f"{self.__class__.__name__} logging final records..."
         )
         final_result = self._merged_genes_and_annotation_data[
@@ -395,7 +418,7 @@ class GeneReader:
                 )
             )
         ]
-        gene_annotator_cli_logger.info(f"FINAL_RECORD_COUNT: {len(final_result)}")
+        pipeline_logger.info(f"FINAL_RECORD_COUNT: {len(final_result)}")
         final_result.to_csv(results_dir / final_results_file_name)
 
     @property

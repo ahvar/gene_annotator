@@ -5,6 +5,7 @@ from rich import print as rprint
 from pathlib import Path
 from src.utils.pipeline_utils import init_cli_logging, set_error_and_exit, validate_inputdir, validate_outputdir, GeneReader
 from src.utils.references import __version__, __Application__, GENE_ANNOTATOR_CLI, hgnc_id_col, gene_stable_id_col
+from src.app import app
 
 cliapp = typer.Typer()
 
@@ -75,11 +76,17 @@ def process_data_from_file(
     gene_reader.merge_gene_and_annotations(gene_stable_id_col, hgnc_id_col)
     gene_reader.parse_panther_id_suffix()
     gene_reader.exclude_tigrfram_and_write(output_dir)
+    gene_reader.write_gene_and_annotations_final(output_dir)
 
 
 @cliapp.command(name="view-results", context_settings={"allow_extra_args": True, "ignore_unknown_options": True},)
-def view_results(ctx: typer.Context):
-    pass
+def view_results(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface to bind to"),
+    port: int = typer.Option(5000, "--port", help="Port to serve on"),
+    debug: bool = typer.Option(False, "--debug", help="Run Flask in debug mode")
+):
+    app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == "__main__":
