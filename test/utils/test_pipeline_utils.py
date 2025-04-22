@@ -99,9 +99,7 @@ class TestPipelineUtils(unittest.TestCase):
         #
         result = find_latest_output_dir()
 
-        #
-        # 7) Check that we got the same mock we expected for the 'latest_dir / "results"'.
-        #
+
         self.assertIs(result, results_path_for_042225)
 
     @patch('src.utils.pipeline_utils.Path')
