@@ -1,5 +1,3 @@
-
-
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField,
@@ -37,12 +35,18 @@ class RegistrationForm(FlaskForm):
     )
     submit = SubmitField("Register")
 
-    def validate_username(self, username):
-        user = db.session.scalar(sa.select(User).where(User.username == username.data))
+    def validate_username(self, researcher_name):
+        user = db.session.scalar(
+            sa.select(Researcher).where(
+                Researcher.researcher_name == researcher_name.data
+            )
+        )
         if user is not None:
-            raise ValidationError("Please use a different username")
+            raise ValidationError("Please use a different researcher name")
 
     def validate_email(self, email):
-        user = db.session.scalar(sa.select(User).where(User.email == email.data))
+        user = db.session.scalar(
+            sa.select(Researcher).where(Researcher.email == email.data)
+        )
         if user is not None:
             raise ValidationError("Please use a different email address")

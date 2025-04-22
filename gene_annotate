@@ -2,12 +2,14 @@
 import logging
 import typer
 from rich import print as rprint
-from src.utils.pipeline_utils import init_logging, set_error_and_exit
-from src.utils.references import GA_LOGGER_NAME, __version__, __Application__
+from pathlib import Path
+from src.utils.pipeline_utils import init_cli_logging, set_error_and_exit, validate_inputdir, validate_outputdir, GeneReader
+from src.utils.references import __version__, __Application__, GENE_ANNOTATOR_CLI, hgnc_id_col, gene_stable_id_col
+from src.app import app
 
 cliapp = typer.Typer()
 
-logger = logging.getLogger(GA_LOGGER_NAME)
+pipeline_logger = logging.getLogger(GENE_ANNOTATOR_CLI)
 
 
 def version_callback(value: bool):
@@ -38,22 +40,62 @@ def main(
 
     [green]Usage:[/green]
     Available Data:
-     - Datasets for mitochondrial genes
+     - genes
      - NIH Sequence Read Archive (SRA)
      - mock fastq files
     """
     if ctx.invoked_subcommand is None:
         rprint(message)
         raise typer.Exit()
+    
+@cliapp.command(name="process-data-from-file", context_settings={"allow_extra_args": True, "ignore_unknown_options": True},)
+def process_data_from_file(
+    ctx: typer.Context,
+    input_dir: Path = typer.Option(
+        None,
+        "--input-dir",
+        callback=validate_inputdir,
+        help="Path to directory containing gene and annotation data",
+    ),
+    output_dir: Path = typer.Option(
+        None,
+        "--output-dir",
+        callback=validate_outputdir,
+        help="Optional path to store final output"
+    ),
+):
+    pipeline_logger.info("Starting data processing....")
+    gene_reader = GeneReader(input_dir=input_dir)
+    gene_reader.find_and_load_gene_data()
+    gene_reader.log_duplicates()
+    gene_reader.remove_duplicates()
+    gene_reader.log_unique_records()
+    gene_reader.write_gene_type_count(output_dir)
+    gene_reader.determine_if_hgnc_id_exists()
+    gene_reader.parse_panther_id_suffix()
+    gene_reader.merge_gene_and_annotations(gene_stable_id_col, hgnc_id_col)
+    gene_reader.parse_panther_id_suffix()
+    gene_reader.exclude_tigrfram_and_write(output_dir)
+    gene_reader.write_gene_and_annotations_final(output_dir)
+
+
+@cliapp.command(name="view-results", context_settings={"allow_extra_args": True, "ignore_unknown_options": True},)
+def view_results(
+    ctx: typer.Context,
+    host: str = typer.Option("127.0.0.1", "--host", help="Host interface to bind to"),
+    port: int = typer.Option(5000, "--port", help="Port to serve on"),
+    debug: bool = typer.Option(False, "--debug", help="Run Flask in debug mode")
+):
+    app.run(host=host, port=port, debug=debug)
 
 
 if __name__ == "__main__":
     try:
-        app_log = init_logging(logging.DEBUG)
+        app_log = init_cli_logging(logging.DEBUG)
         app_log.log_application_start()
         cliapp()
     except Exception as e:
-        logger.error("An error occurred: %s", e)
+        pipeline_logger.error("An error occurred: %s", e)
         set_error_and_exit(e)
     finally:
         app_log.log_application_finish()

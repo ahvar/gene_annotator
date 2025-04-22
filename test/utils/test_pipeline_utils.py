@@ -6,19 +6,22 @@ import unittest
 from unittest.mock import patch, mock_open, MagicMock, Mock, call, PropertyMock
 import pandas as pd
 from io import StringIO
+from datetime import datetime
 from collections import namedtuple
 from pandas.errors import EmptyDataError
 from itertools import chain, repeat
 from pathlib import Path
-from utils.references import pid_suffix_col
-from utils.pipeline_utils import (
+from src.utils.references import pid_suffix_col
+from src.utils.pipeline_utils import (
     validate_outputdir,
     GeneReader,
     GeneDataException,
     GeneAnnotationException,
     gene_annotations_file_name,
     genes_file_name,
-    gene_etl_logger,
+    pipeline_logger,
+    _parse_timestamp,
+    find_latest_output_dir
 )
 import typer
 from typer import Context
@@ -29,10 +32,86 @@ class TestPipelineUtils(unittest.TestCase):
     Unit tests for pipeline utils
     """
 
-    # def setUp(self):
-    #    self.ctx = Context()
+    def setUp(self):
+        self.mock_dirs = [
+            Path("output_042224T102030"),  # April 22, 2024 10:20:30
+            Path("output_042223T102030"),  # April 22, 2023 10:20:30
+            Path("output_042225T102030"),  # April 22, 2025 10:20:30
+        ]
 
-    @patch("pathlib.Path")
+    def test_parse_timestamp(self):
+        dir_path = dir_path = Path("output_042224T102030")
+        expected = datetime(2024, 4, 22, 10, 20, 30)
+        result = _parse_timestamp(dir_path)
+        self.assertEqual(result, expected)
+
+    def test_parse_invalid_timestap(self):
+        dir_path = Path("invalid_directory")
+        result = _parse_timestamp(dir_path)
+        self.assertEqual(result, datetime.min)
+
+    @patch("src.utils.pipeline_utils.Path")
+    def test_find_latest_output_dir(self, mock_path_cls):
+        """
+        Ensure that all 'Path(...)' calls inside the function under test
+        produce the same mock objects that we configure here.
+        """
+        mock_file_path = MagicMock(name="mock_file_path")
+        mock_file_path.resolve.return_value = mock_file_path
+        fake_root = MagicMock(name="fake_root")
+        mock_file_path.parent = MagicMock(name="mock_file_path.parent")
+        mock_file_path.parent.parent = fake_root
+        mock_path_cls.return_value = mock_file_path
+        mock_etl_dir = MagicMock(name="mock_etl_dir")
+        
+        fake_root.__truediv__.return_value = mock_etl_dir
+
+        #
+        # 4) Now build the "output_*" directories as mocks, all from the SAME mock_path_cls.
+        #
+        mock_dirs = []
+        timestamps = ["042224T102030", "042223T102030", "042225T102030"]
+        for ts in timestamps:
+            dir_name = f"output_{ts}"
+            dir_mock = MagicMock(name=f"MockDir-{dir_name}")
+            dir_mock.name = dir_name
+            dir_mock.is_dir.return_value = True
+            mock_dirs.append(dir_mock)
+
+        # If code does mock_etl_dir.glob("output_*"), return these
+        mock_etl_dir.glob.return_value = mock_dirs
+
+        #
+        # 5) In the function, after picking the latest, it does `latest_dir / "results"`.
+        #    That triggers `.__truediv__("results")` on whichever directory is chosen last.
+        #    We'll let that produce a final mock to check.
+        #
+        # Let’s say each dir_mock.__truediv__("results") returns a new mock. We'll store
+        # the one for "output_042225T102030" as the 'expected' so we can compare later.
+        #
+        dir_042225 = mock_dirs[2]
+        results_path_for_042225 = MagicMock(name="results_of_042225")
+        dir_042225.__truediv__.return_value = results_path_for_042225
+
+        #
+        # 6) Now call the function under test (with no argument),
+        #    so it uses the code path that calls Path(__file__), etc.
+        #
+        result = find_latest_output_dir()
+
+
+        self.assertIs(result, results_path_for_042225)
+
+    @patch('src.utils.pipeline_utils.Path')
+    def test_find_latest_output_dir_empty(self, mock_path):
+        """Test handling when no output directories exist"""
+        mock_path.return_value.resolve.return_value.parent.parent = Path("/fake/root")
+        mock_path.return_value.glob.return_value = []
+        
+        result = find_latest_output_dir()
+        self.assertIsNone(result)
+
+    @patch("src.utils.pipeline_utils.Path")
     @patch("typer.Context")
     def test_validate_etl_output_dir(self, mock_context, mock_path):
         """
@@ -73,9 +152,9 @@ class TestGeneReader(unittest.TestCase):
         self._data_dir = Path("/mock/data/dir")
         self._gene_reader = GeneReader(self._data_dir)
 
-    @patch("utils.pipeline_utils.pd.read_csv")
-    @patch("utils.pipeline_utils.Path.exists")
-    @patch("utils.pipeline_utils.Path.is_dir")
+    @patch("src.utils.pipeline_utils.pd.read_csv")
+    @patch("src.utils.pipeline_utils.Path.exists")
+    @patch("src.utils.pipeline_utils.Path.is_dir")
     def test_find_and_load_gene_data_valid_dir(
         self, mock_is_dir, mock_exists, mock_read_csv
     ):
@@ -93,8 +172,8 @@ class TestGeneReader(unittest.TestCase):
         ):
             self._gene_reader.find_and_load_gene_data()
 
-    @patch("utils.pipeline_utils.Path.exists")
-    @patch("utils.pipeline_utils.Path.is_dir")
+    @patch("src.utils.pipeline_utils.Path.exists")
+    @patch("src.utils.pipeline_utils.Path.is_dir")
     def test_find_and_load_gene_data_invalid_dir(self, mock_is_dir, mock_exists):
         """
         Test finding and loading data from an invalid data directory
@@ -107,7 +186,7 @@ class TestGeneReader(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self._gene_reader.find_and_load_gene_data()
 
-    @patch("utils.pipeline_utils.Path.glob")
+    @patch("src.utils.pipeline_utils.Path.glob")
     def test_check_that_dataset_exists_file_exists(self, mock_glob):
         """
         Test dataset check when files exists
@@ -121,7 +200,7 @@ class TestGeneReader(unittest.TestCase):
         # This should not raise any exception
         self._gene_reader._check_that_dataset_exists("mock_dataset.csv")
 
-    @patch("utils.pipeline_utils.Path.glob")
+    @patch("src.utils.pipeline_utils.Path.glob")
     def test_check_that_dataset_exists_file_not_found(self, mock_glob):
         """
         Test dataset check when file doesn't exist
@@ -132,7 +211,7 @@ class TestGeneReader(unittest.TestCase):
         with self.assertRaises(FileNotFoundError):
             self._gene_reader._check_that_dataset_exists("mock_dataset.csv")
 
-    @patch("utils.pipeline_utils.Path.glob")
+    @patch("src.utils.pipeline_utils.Path.glob")
     def test_check_that_dataset_exists_invalid_annotation_file(self, mock_glob):
         """
         Test dataset check when dataset file for annotations is invalid
@@ -146,7 +225,7 @@ class TestGeneReader(unittest.TestCase):
         with self.assertRaises(GeneAnnotationException):
             self._gene_reader._check_that_dataset_exists("mock_dataset.tsv")
 
-    @patch("utils.pipeline_utils.Path.glob")
+    @patch("src.utils.pipeline_utils.Path.glob")
     def test_check_that_dataset_exists_invalid_gene_file(self, mock_glob):
         """
         Test dataset when dataset file for genes is invalid

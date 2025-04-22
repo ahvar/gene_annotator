@@ -34,5 +34,5 @@ if not app.debug:
         app.logger.addHandler(mail_handler)
     app_logger = init_frontend_logger(logging.INFO)
 
-from app import routes, errors
-from src.app.models import researcher
+from src.app import routes
+from src.app.models import researcher, gene

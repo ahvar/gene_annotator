@@ -3,7 +3,7 @@ from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
 from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm
-from src.app.models.researcher import User
+from src.app.models.researcher import Researcher
 import sqlalchemy as sa
 
 
@@ -24,7 +24,7 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         user = db.session.scalar(
-            sa.select(User).where(User.username == form.username.data)
+            sa.select(Researcher).where(Researcher.username == form.username.data)
         )
         if user is None or not user.check_password(form.password.data):
             flash("Invalid username or password")
