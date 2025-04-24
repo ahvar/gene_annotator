@@ -6,7 +6,7 @@ from typing import Any
 from dataclasses import dataclass, field
 
 __version__ = "0.1.0"
-__copyright__ = "Copyright \xa9 2024 Arthur Vargas | All rights reserved.".encode(
+__copyright__ = "Copyright \xa9 2025 Arthur Vargas | All rights reserved.".encode(
     "utf-8", "ignore"
 )
 __Application__ = "GENE_ANNOTATOR"

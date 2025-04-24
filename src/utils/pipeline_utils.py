@@ -39,24 +39,15 @@ gene_annotator_frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
 
 def _parse_timestamp(dir_path: Path) -> datetime:
     try:
-        timestamp_str = dir_path.name.split('_')[1]
+        # Get just the directory name containing the timestamp
+        dir_name = dir_path.parts[-2] if dir_path.name == "results" else dir_path.name
+        timestamp_str = dir_name.split("_")[1]  # Get MMDDYYTHHMMSS part
         return datetime.strptime(timestamp_str, "%m%d%yT%H%M%S")
     except (IndexError, ValueError):
-        pipeline_logger.error(f"An error occurred while parsing output directory timestamps")
+        pipeline_logger.error(
+            f"An error occurred while parsing output directory timestamps"
+        )
         return datetime.min
-
-
-def find_latest_output_dir(root_etl_dir: Path=None) -> Path:
-    """
-    """
-    if not root_etl_dir:
-        project_root = Path(__file__).resolve().parent.parent
-        root_etl_dir = project_root / "etl"
-    output_dirs = [dir for dir in root_etl_dir.glob("output_*") if dir.is_dir()]
-    if not output_dirs:
-        return None
-    latest_dir = sorted(output_dirs, key=_parse_timestamp, reverse=True)[0]
-    return latest_dir / "results"
 
 
 def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
@@ -72,14 +63,10 @@ def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
     if etl_output_dir and not etl_output_dir.exists():
-        pipeline_logger.error(
-            f"The output directory for GATE: {etl_output_dir}"
-        )
+        pipeline_logger.error(f"The output directory for GATE: {etl_output_dir}")
         raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
     if not etl_output_dir:
-        pipeline_logger.debug(
-            "Creating default output directory and logfile...."
-        )
+        pipeline_logger.debug("Creating default output directory and logfile....")
         pipeline_logger.debug("../etl/output_<timestamp>/")
         current_file_path = Path(__file__).resolve()
         project_root = current_file_path.parent.parent
@@ -104,6 +91,28 @@ def validate_inputdir(ctx: typer.Context, etl_input_dir: Path) -> Path:
     if not any(etl_input_dir.iterdir()):
         raise typer.BadParameter(f"Input directory '{etl_input_dir}' is empty")
     return etl_input_dir
+
+
+def validate_results_dir(ctx: typer.Context, results_dir: Path=None) -> Path:
+    """
+    A user has the option to pass the absolute path to the 'results' directory
+    containing pipeline outputs. If no such directory is passed or it does not
+    exist, the pipeline finds the 'results' directory from the most recent
+    pipeline run.
+    
+    :params         ctx:    the typer Context object
+    :params results_dir:    the 'results' directory containing pipeline outputs
+    """
+    if not results_dir or not results_dir.exists() or not results_dir.is_dir():
+        project_root = Path(__file__).resolve().parent.parent
+        root_etl_dir = project_root / "etl"
+        output_dirs = [dir for dir in root_etl_dir.glob("output_*") if dir.is_dir()]
+        if not output_dirs:
+            raise typer.BadParameter(f"No results found. Run pipeline.")
+        latest_dir = sorted(output_dirs, key=_parse_timestamp, reverse=True)[0]
+        return latest_dir / "results"
+    return results_dir
+
 
 
 def validate_style(ctx: typer.Context, style: str) -> str:
@@ -299,9 +308,7 @@ class GeneReader:
         """
         Log the number of duplicate records in genes and annotations
         """
-        pipeline_logger.info(
-            f"{self.__class__.__name__} is finding duplicates..."
-        )
+        pipeline_logger.info(f"{self.__class__.__name__} is finding duplicates...")
         self._duplicate_genes = self._genes[self._genes.duplicated()]
         self._duplicate_annotations = self._gene_annotations[
             self._gene_annotations.duplicated()
@@ -317,9 +324,7 @@ class GeneReader:
         """
         Remove duplicate genes and annotations
         """
-        pipeline_logger.info(
-            f"{self.__class__.__name__} is removing duplicates..."
-        )
+        pipeline_logger.info(f"{self.__class__.__name__} is removing duplicates...")
         self._genes = self._genes.drop_duplicates()
         self._gene_annotations = self._gene_annotations.drop_duplicates()
 
@@ -327,9 +332,7 @@ class GeneReader:
         """
         Log number of unique genes and annotations
         """
-        pipeline_logger.info(
-            f"{self.__class__.__name__} logging unique records..."
-        )
+        pipeline_logger.info(f"{self.__class__.__name__} logging unique records...")
         pipeline_logger.info(
             f"UNIQUE_RECORD_COUNT: {genes_file_name} - {len(self._genes)}"
         )
@@ -342,9 +345,7 @@ class GeneReader:
         Writes the gene_type count to an output file: gene_type_count.csv
         :params results_dir: the results output directory
         """
-        pipeline_logger.info(
-            f"{self.__class__.__name__} writing gene type count..."
-        )
+        pipeline_logger.info(f"{self.__class__.__name__} writing gene type count...")
         gene_type_counts = self._genes[gene_type_col].value_counts().reset_index()
         gene_type_counts.columns = [gene_type_col, count_col]
         gene_type_counts.to_csv(results_dir / gene_type_count_out_file, index=False)
@@ -405,9 +406,7 @@ class GeneReader:
          This selects only those rows from genes_and_annotations that
          don't meet the conditions specified.
         """
-        pipeline_logger.info(
-            f"{self.__class__.__name__} logging final records..."
-        )
+        pipeline_logger.info(f"{self.__class__.__name__} logging final records...")
         final_result = self._merged_genes_and_annotation_data[
             ~(
                 (self._merged_genes_and_annotation_data[tigrfam_id_col].isnull())
