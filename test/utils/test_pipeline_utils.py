@@ -21,7 +21,7 @@ from src.utils.pipeline_utils import (
     genes_file_name,
     pipeline_logger,
     _parse_timestamp,
-    find_latest_output_dir
+    validate_results_dir
 )
 import typer
 from typer import Context
@@ -39,19 +39,33 @@ class TestPipelineUtils(unittest.TestCase):
             Path("output_042225T102030"),  # April 22, 2025 10:20:30
         ]
 
-    def test_parse_timestamp(self):
-        dir_path = dir_path = Path("output_042224T102030")
+    def test_parse_timestamp_from_results_dir(self):
+        """Test parsing timestamp from a path ending in /results"""
+        dir_path = Path("/somewhere/output_042224T102030/results")
         expected = datetime(2024, 4, 22, 10, 20, 30)
         result = _parse_timestamp(dir_path)
         self.assertEqual(result, expected)
 
-    def test_parse_invalid_timestap(self):
-        dir_path = Path("invalid_directory")
+    def test_parse_timestamp_from_output_dir(self):
+        """Test parsing timestamp from output directory name"""
+        dir_path = Path("output_042224T102030")
+        expected = datetime(2024, 4, 22, 10, 20, 30)
         result = _parse_timestamp(dir_path)
-        self.assertEqual(result, datetime.min)
+        self.assertEqual(result, expected)
+
+    def test_parse_invalid_timestamp(self):
+        """Test parsing invalid directory names"""
+        test_cases = [
+            Path("invalid_directory"),
+            Path("/somewhere/not_a_timestamp/results"),
+            Path("output_invalid")
+        ]
+        for dir_path in test_cases:
+            result = _parse_timestamp(dir_path)
+            self.assertEqual(result, datetime.min)
 
     @patch("src.utils.pipeline_utils.Path")
-    def test_find_latest_output_dir(self, mock_path_cls):
+    def test_validate_results_dir(self, mock_path_cls):
         """
         Ensure that all 'Path(...)' calls inside the function under test
         produce the same mock objects that we configure here.
@@ -97,19 +111,10 @@ class TestPipelineUtils(unittest.TestCase):
         # 6) Now call the function under test (with no argument),
         #    so it uses the code path that calls Path(__file__), etc.
         #
-        result = find_latest_output_dir()
+        result = validate_results_dir(MagicMock())
 
 
         self.assertIs(result, results_path_for_042225)
-
-    @patch('src.utils.pipeline_utils.Path')
-    def test_find_latest_output_dir_empty(self, mock_path):
-        """Test handling when no output directories exist"""
-        mock_path.return_value.resolve.return_value.parent.parent = Path("/fake/root")
-        mock_path.return_value.glob.return_value = []
-        
-        result = find_latest_output_dir()
-        self.assertIsNone(result)
 
     @patch("src.utils.pipeline_utils.Path")
     @patch("typer.Context")
