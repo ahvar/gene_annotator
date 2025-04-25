@@ -15,4 +15,4 @@ class Config:
     MAIL_USERNAME = os.environ.get("MAIL_USERNAME")
     MAIL_PASSWORD = os.environ.get("MAIL_PASSWORD")
     ADMINS = ["arthurvargasdev@gmail.com"]
-    ITEMS_PER_PAGE = 20
+    GENES_PER_PAGE = 50

@@ -1,9 +1,13 @@
+from datetime import datetime, UTC
+from pathlib import Path
 from flask import render_template, flash, redirect, url_for, request
 from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
 from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm
+from src.utils.pipeline_utils import validate_outputdir
 from src.app.models.researcher import Researcher
+from src.app.models.gene import Gene
 import sqlalchemy as sa
 
 
@@ -11,9 +15,23 @@ import sqlalchemy as sa
 @app.route("/index")
 @login_required
 def index():
-    user = {"username": "Arthur"}
-    pandl = [{"name": "Gene Annotator", "researcher": {"username": "John"}}]
-    return render_template("index.html", title="Home")
+    page = request.args.get("page", 1, type=int)
+    query = sa.select(Gene).order_by(Gene.created_at.desc())
+    genes = db.paginate(
+        query,
+        page=page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False,
+    )
+    next_url = url_for("index", page=genes.next_num) if genes.has_next else None
+    prev_url = url_for("index", page=genes.prev_num) if genes.has_prev else None
+    return render_template(
+        "index.html",
+        title="Gene Database",
+        genes=genes.items,
+        next_url=next_url,
+        prev_url=prev_url,
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -42,6 +60,26 @@ def login():
 def logout():
     logout_user()
     return redirect(url_for("index"))
+
+@app.route("/run_pipeline", methods=["POST"])
+@login_required
+def run_pipeline():
+    """Execute pipeline steps and store results in database"""
+    try:
+        # Create timestamped output directory
+        timestamp = datetime.now(UTC).strftime("%m%d%yT%H%M%S")
+        output_dir = Path(f"output_{timestamp}")
+        output_dir = validate_outputdir(None, output_dir)
+
+        # Process pipeline and load results to DB
+        process_pipeline_run(output_dir)
+        
+        flash("Pipeline run complete! Results loaded to database.")
+        return redirect(url_for("index"))
+        
+    except Exception as e:
+        flash(f"Pipeline error: {str(e)}", "error")
+        return redirect(url_for("index"))
 
 
 @app.route("/register", methods=["GET", "POST"])
