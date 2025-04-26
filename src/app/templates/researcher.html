@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <table>
+        <tr valign="top">
+            <td><img src="{{ researcher.avatar(128) }}"></td>
+            <td>
+                <h1>Researcher: {{ researcher.researcher_name }}</h1>
+                {% if researcher.about_me %}<p>{{ researcher.about_me }}</p>{% endif %}
+                {% if researcher.last_seen %}<p>{{ researcher.last_seen }}</p>{% endif %}
+                <p>{{ researcher.followers_count() }} followers, {{ researcher.following_count() }} following.</p>
+                {% if researcher == current_user %}
+                <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                {% elif not current_user.is_following(researcher) %}
+                <p>
+                    <form action="{{ url_for('follow', researcher_name=researcher.researcher_name) }}" method="post">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value='Follow') }}
+                    </form>
+                </p>
+                {% else %}
+                <p>
+                    <form action="{{ url_for('unfollow', researcher=researcher.researcher_name) }}" method="post">
+                        {{ form.hidden_tag() }}
+                        {{ form.submit(value='Unfollow') }}
+                    </form>
+                </p>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+    <hr>
+    {% for run in runs %}
+        {% include '_run.html' %}
+    {% endfor %}
+{% endblock %}

@@ -37,6 +37,8 @@ class Researcher(UserMixin, db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
 
+    runs: so.Mapped[list["PipelineRun"]] = so.relationship("PipelineRun", back_populates="researcher")
+
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
 

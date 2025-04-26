@@ -14,7 +14,7 @@ from src.app.models.researcher import Researcher
 
 
 class LoginForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    researcher_name = StringField("Researcher Name", validators=[DataRequired()])
     password = PasswordField("Password", validators=[DataRequired()])
     remember_me = BooleanField("Remember Me")
     submit = SubmitField("Sign In")
@@ -27,7 +27,7 @@ class GeneAnnotationForm(FlaskForm):
 
 
 class RegistrationForm(FlaskForm):
-    username = StringField("Username", validators=[DataRequired()])
+    researcher_name = StringField("Researcher name", validators=[DataRequired()])
     email = StringField("Email", validators=[DataRequired(), Email()])
     password = PasswordField("Password", validators=[DataRequired()])
     password2 = PasswordField(
@@ -36,17 +36,20 @@ class RegistrationForm(FlaskForm):
     submit = SubmitField("Register")
 
     def validate_username(self, researcher_name):
-        user = db.session.scalar(
+        researcher = db.session.scalar(
             sa.select(Researcher).where(
                 Researcher.researcher_name == researcher_name.data
             )
         )
-        if user is not None:
+        if researcher is not None:
             raise ValidationError("Please use a different researcher name")
 
     def validate_email(self, email):
-        user = db.session.scalar(
+        researcher = db.session.scalar(
             sa.select(Researcher).where(Researcher.email == email.data)
         )
-        if user is not None:
+        if researcher is not None:
             raise ValidationError("Please use a different email address")
+
+class EmptyForm(FlaskForm):
+    submit = SubmitField("Submit")

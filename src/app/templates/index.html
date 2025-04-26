@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Gene Database</h1>
+    <form action="{{ url_for('run_pipeline' ) }}" method="post">
+        <button type="submit" class="btn btn-primary">Run Pipeline</button>
+    </form>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Gene Stable ID</th>
+                <th>Gene Type</th>
+                <th>Gene Name</th>
+                <th>HGNC Name</th>
+                <th>HGNC ID</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for gene in genes %}
+            <tr>
+                <td>{{ gene.gene_stable_id }}</td>
+                <td>{{ gene.gene_type }}</td>
+                <td>{{ gene.gene_name }}</td>
+                <td>{{ gene.hgnc_name }}</td>
+                <td>{{ gene.hgnc_id }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    {% if prev_url %}
+    <a href="{{ prev_url }}">Previous</a>
+    {% endif %}
+    {% if next_url %}
+    <a href="{{ next_url }}">Next</a>
+    {% endif %}
+{% endblock %}
