@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Pipeline Run Results</h1>
+    <div class="run-info">
+        <p>Run by: {{ run.researcher.researcher_name }}</p>
+        <p>Pipeline: {{ run.pipeline_name }}</p>
+        <p>Started: {{ run.formatted_timestamp }}</p>
+        <p>Status: {{ run.status }}</p>
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Gene Stable ID</th>
+                <th>Gene Type</th>
+                <th>Gene Name</th>
+                <th>HGNC ID</th>
+                <th>Panther ID</th>
+                <th>Tigrfam ID</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for result in results %}
+            <tr>
+                <td>{{ result.gene_stable_id }}</td>
+                <td>{{ result.gene_type }}</td>
+                <td>{{ result.gene_name }}</td>
+                <td>{{ result.hgnc_id }}</td>
+                <td>{{ result.annotations[0].panther_id if result.annotations else '' }}</td>
+                <td>{{ result.annotations[0].tigrfam_id if results.annotations else '' }}</td>
+            </tr>
+        {% endif %}    
+        </tbody>
+    </table>
+    {% if prev_url %}
+        <a href="{{ prev_url }}">Previous</a>
+    {% endif %}
+    {% if next_url %}
+        <a href="{{ next_url }}">Next</a>
+    {% endif %}
+{% endblock %}

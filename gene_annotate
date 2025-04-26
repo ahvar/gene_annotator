@@ -92,7 +92,6 @@ def process_data_from_file(
     gene_reader.determine_if_hgnc_id_exists()
     gene_reader.parse_panther_id_suffix()
     gene_reader.merge_gene_and_annotations(gene_stable_id_col, hgnc_id_col)
-    gene_reader.parse_panther_id_suffix()
     gene_reader.exclude_tigrfram_and_write(output_dir)
     gene_reader.write_gene_and_annotations_final(output_dir)
 

@@ -1,9 +1,14 @@
+from datetime import datetime, UTC
+from pathlib import Path
 from flask import render_template, flash, redirect, url_for, request
 from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
 from app import app, db
-from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm
+from app.forms import GeneAnnotationForm, RegistrationForm, LoginForm, EmptyForm
+from src.utils.pipeline_utils import validate_outputdir
 from src.app.models.researcher import Researcher
+from src.app.models.gene import Gene, GeneAnnotation
+from src.app.models.pipeline_run import PipelineRun
 import sqlalchemy as sa
 
 
@@ -11,9 +16,35 @@ import sqlalchemy as sa
 @app.route("/index")
 @login_required
 def index():
-    user = {"username": "Arthur"}
-    pandl = [{"name": "Gene Annotator", "researcher": {"username": "John"}}]
-    return render_template("index.html", title="Home")
+    # Get genes page
+    genes_page = request.args.get("page", 1, type=int)
+    genes_query = sa.select(Gene).order_by(Gene.created_at.desc())
+    genes = db.paginate(
+        genes_query,
+        page=genes_page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False,
+    )
+    
+    # Get annotations page
+    annotations_page = request.args.get("annotations_page", 1, type=int)
+    annotations_query = sa.select(GeneAnnotation).order_by(GeneAnnotation.created_at.desc())
+    annotations = db.paginate(
+        annotations_query,
+        page=annotations_page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False,
+    )
+    return render_template(
+        "index.html",
+        title="Gene Database",
+        genes=genes.items,
+        next_url=url_for("index", page=genes.next_num) if genes.has_next else None,
+        prev_url=url_for("index", page=genes.prev_num) if genes.has_prev else None,
+        annotations=annotations.items,
+        annotations_next_url=url_for("index", annotations_page=annotations.next_num) if annotations.has_next else None,
+        annotations_prev_url=url_for("index", annotations_page=annotations.prev_num) if annotations.has_prev else None
+    )
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -43,6 +74,26 @@ def logout():
     logout_user()
     return redirect(url_for("index"))
 
+@app.route("/run_pipeline", methods=["POST"])
+@login_required
+def run_pipeline():
+    """Execute pipeline steps and store results in database"""
+    try:
+        # Create timestamped output directory
+        timestamp = datetime.now(UTC).strftime("%m%d%yT%H%M%S")
+        output_dir = Path(f"output_{timestamp}")
+        output_dir = validate_outputdir(None, output_dir)
+
+        # Process pipeline and load results to DB
+        process_pipeline_run(output_dir)
+        
+        flash("Pipeline run complete! Results loaded to database.")
+        return redirect(url_for("index"))
+        
+    except Exception as e:
+        flash(f"Pipeline error: {str(e)}", "error")
+        return redirect(url_for("index"))
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -71,6 +122,81 @@ def gene_annotation():
         "gene_annotation.html", title="Gene Annotation", form=form, data=data
     )
 
+@app.route("/researcher/<researcher_name>")
+@login_required
+def researcher(researcher_name):
+    researcher = db.first_or_404(
+        sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
+    )
+    page = request.args.get("page", 1, type=int)
+    runs_query = (
+        sa.select(PipelineRun)
+        .where(PipelineRun.researcher_id == researcher.id)
+        .order_by(PipelineRun.timestamp.desc())
+    )
+    runs = db.paginate(
+        runs_query,
+        page=page,
+        per_page=app.config["RUNS_PER_PAGE"],
+        error_out=False
+    )
+    next_url = (
+        url_for(
+            "researcher",
+            researcher_name=researcher.researcher_name,
+            page=runs.next_num,
+        )
+        if runs.has_next
+        else None
+    )
+    prev_url = (
+        url_for(
+            "researcher",
+            researcher_name=researcher.researcher_name,
+            page=runs.prev_num,
+        )
+        if runs.has_prev
+        else None
+    )
+    form = EmptyForm()
+    return render_template(
+        "researcher.html",
+        researcher=researcher,
+        runs=runs.items,
+        next_url=next_url,
+        prev_url=prev_url,
+        form=form,
+    )
+
+@app.route("/pipeline_run/<int:run_id>")
+@login_required
+def pipeline_run_results(run_id):
+    run = db.session.get(PipelineRun, run_id)
+    if run is None:
+        flash("Pipeline run not found.")
+        return redirect(url_for("index"))
+        
+    # Get final results for this run
+    query = (sa.select(Gene)
+             .join(GeneAnnotation)
+             .where(Gene.created_at >= run.timestamp)
+             .where(Gene.created_at <= run.loaded_at))
+             
+    page = request.args.get("page", 1, type=int)
+    results = db.paginate(
+        query,
+        page=page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False
+    )
+    
+    return render_template(
+        "pipeline_results.html",
+        run=run,
+        results=results.items,
+        next_url=url_for("pipeline_run_results", run_id=run_id, page=results.next_num) if results.has_next else None,
+        prev_url=url_for("pipeline_run_results", run_id=run_id, page=results.prev_num) if results.has_prev else None
+    )
 
 def get_filtered_genes(gene_name, gene_type):
     if data is None:
