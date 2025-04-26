@@ -16,22 +16,34 @@ import sqlalchemy as sa
 @app.route("/index")
 @login_required
 def index():
-    page = request.args.get("page", 1, type=int)
-    query = sa.select(Gene).order_by(Gene.created_at.desc())
+    # Get genes page
+    genes_page = request.args.get("page", 1, type=int)
+    genes_query = sa.select(Gene).order_by(Gene.created_at.desc())
     genes = db.paginate(
-        query,
-        page=page,
+        genes_query,
+        page=genes_page,
         per_page=app.config["GENES_PER_PAGE"],
         error_out=False,
     )
-    next_url = url_for("index", page=genes.next_num) if genes.has_next else None
-    prev_url = url_for("index", page=genes.prev_num) if genes.has_prev else None
+    
+    # Get annotations page
+    annotations_page = request.args.get("annotations_page", 1, type=int)
+    annotations_query = sa.select(GeneAnnotation).order_by(GeneAnnotation.created_at.desc())
+    annotations = db.paginate(
+        annotations_query,
+        page=annotations_page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False,
+    )
     return render_template(
         "index.html",
         title="Gene Database",
         genes=genes.items,
-        next_url=next_url,
-        prev_url=prev_url,
+        next_url=url_for("index", page=genes.next_num) if genes.has_next else None,
+        prev_url=url_for("index", page=genes.prev_num) if genes.has_prev else None,
+        annotations=annotations.items,
+        annotations_next_url=url_for("index", annotations_page=annotations.next_num) if annotations.has_next else None,
+        annotations_prev_url=url_for("index", annotations_page=annotations.prev_num) if annotations.has_prev else None
     )
 
 
