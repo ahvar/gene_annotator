@@ -1,11 +1,13 @@
-from datetime import datetime
+from datetime import datetime, timezone
 import pandas as pd
+from flask import render_template, flash, redirect, url_for, request
+from flask_login import current_user
 import sqlalchemy as sa
 from pathlib import Path
 from src.app import db
 from src.app.models.pipeline_run import PipelineRun
 from src.app.models.gene import Gene, GeneAnnotation
-from src.utils.pipeline_utils import pipeline_logger, _parse_timestamp
+from src.utils.pipeline_utils import pipeline_logger, _parse_timestamp, GeneReader
 from src.utils.references import (
     final_results_file_name,
     gene_stable_id_col,
@@ -67,21 +69,39 @@ def load_pipeline_results_into_db(final_csv_path: Path) -> None:
     db.session.commit()
 
 
-def process_pipeline_run(output_dir: Path) -> None:
+def process_pipeline_run(output_dir: Path = None) -> None:
     """Process a pipeline run if not already loaded"""
-    timestamp = _parse_timestamp(output_dir)
-    existing = PipelineRun.query.filter_by(output_dir=str(output_dir)).first()
+    if output_dir is None:
+        timestamp = datetime.now(timezone.utc)
+        output_dir = Path(f"output_{timestamp.strftime('%m%d%yT%H%M%S')}")
+        gene_reader = GeneReader()
+    else:
+        timestamp = _parse_timestamp(output_dir)
+        gene_reader = GeneReader(input_dir=output_dir)
+    
+    try:
+        gene_reader.find_and_load_gene_data()
+        gene_reader.log_duplicates()
+        gene_reader.remove_duplicates()
+        gene_reader.log_unique_records()
+        gene_reader.determine_if_hgnc_id_exists()
+        gene_reader.parse_panther_id_suffix()
+        gene_reader.merge_gene_and_annotations(col_one=gene_stable_id_col, col_two=hgnc_id_col)
 
-    if existing:
-        pipeline_logger.info(f"Pipeline run {output_dir} already processed")
-        return
-
-    results_file = output_dir / "results" / final_results_file_name
-    if not results_file.exists():
-        raise FileNotFoundError(f"Results file not found: {results_file}")
-
-    load_pipeline_results_into_db(results_file)
-
-    run = PipelineRun(timestamp=timestamp, output_dir=str(output_dir))
-    db.session.add(run)
-    db.session.commit()
+        results_dir = output_dir / "results"
+        results_dir.mkdir(exist_ok=True)
+        gene_reader.write_gene_and_annotations_final(results_dir)
+        results_file = results_dir / final_results_file_name
+        load_pipeline_results_into_db(results_file)
+        run = PipelineRun(
+            timestamp=timestamp,
+            output_dir=str(output_dir),
+            pipeline_name="Gene Annotation Pipeline",
+            pipeline_type="UI",
+            researcher_id=current_user.id,
+            status="completed"
+        )
+        return run
+    except Exception as e:
+        pipeline_logger.error(f"Pipeline error: {e}")
+        raise

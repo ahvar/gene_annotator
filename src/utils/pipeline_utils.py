@@ -233,7 +233,7 @@ class GeneReader:
      - counting unique genes
     """
 
-    def __init__(self, input_dir: Path):
+    def __init__(self, input_dir: Path = Path(__file__).resolve().parent.parent / "etl" / "data"):
         """
         Construct GeneReader
         :params data_dir: the input directory

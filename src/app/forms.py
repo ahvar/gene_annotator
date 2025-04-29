@@ -4,6 +4,7 @@ from wtforms import (
     PasswordField,
     BooleanField,
     SubmitField,
+    TextAreaField,
     DateField,
     FloatField,
 )
@@ -21,8 +22,13 @@ class LoginForm(FlaskForm):
 
 
 class GeneAnnotationForm(FlaskForm):
-    gene_name = StringField("Gene Name", validators=[DataRequired()])
-    gene_type = StringField("Gene Type", validators=[DataRequired()])
+    """Form for manually entering gene annotations"""
+    gene_stable_id = StringField("Gene Stable ID", validators=[DataRequired()])
+    hgnc_id = StringField("HGNC ID")
+    panther_id = StringField("Panther ID")
+    tigrfam_id = StringField("Tigrfam ID")
+    wikigene_name = StringField("Wikigene Name")
+    gene_description = TextAreaField("Gene Description")
     submit = SubmitField("Search")
 
 

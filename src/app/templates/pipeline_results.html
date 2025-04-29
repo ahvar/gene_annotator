@@ -16,19 +16,23 @@
                 <th>Gene Type</th>
                 <th>Gene Name</th>
                 <th>HGNC ID</th>
+                <th>HGNC Name</th>
                 <th>Panther ID</th>
                 <th>Tigrfam ID</th>
+                <th>Wikigene Name</th>
             </tr>
         </thead>
         <tbody>
-        {% for result in results %}
+        {% for gene, annotation in results %}
             <tr>
                 <td>{{ result.gene_stable_id }}</td>
                 <td>{{ result.gene_type }}</td>
                 <td>{{ result.gene_name }}</td>
                 <td>{{ result.hgnc_id }}</td>
-                <td>{{ result.annotations[0].panther_id if result.annotations else '' }}</td>
-                <td>{{ result.annotations[0].tigrfam_id if results.annotations else '' }}</td>
+                <td>{{ result.hgnc_name }} </td>
+                <td>{{ annotation.panther_id }}</td>
+                <td>{{ annotation.tigrfam_id }}</td>
+                <td>{{ annotation.wikigene_name }}</td>
             </tr>
         {% endif %}    
         </tbody>
