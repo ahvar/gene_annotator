@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="alert alert-info">
+        <h4>{{ message }}</h4>
+    </div>
+    <div class="pipeline-controls">
+        <form action="{{ url_for('run_pipeline') }}" method="post">
+            <button type="submit" class="btn btn-primary">Run Pipeline Now</button>
+        </form>
+        <p class="text-muted">Click to process and merge gene datasets</p>
+    </div>
+    <div class="navigation-links">
+        <a href="{{ url_for('index') }}" class="btn btn-secondary">Return to Dashboard</a>
+        {% if a current_user.is_authenticated %}
+        <a href="{{ url_for('researcher', researcher=current_user.researcher_name) }}"
+            class="btn btn-info">View My Pipeline Runs</a>
+        {% endif %}
+    </div>
+{% endblock %}
