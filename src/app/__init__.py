@@ -1,8 +1,9 @@
+import os
 import logging
 from logging.handlers import SMTPHandler
-from src.utils.pipeline_utils import init_frontend_logger
 from flask import Flask
-from app.config import Config
+from src.app.config import Config
+from src.utils.pipeline_utils import init_frontend_logger
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
@@ -11,8 +12,10 @@ app = Flask(__name__)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
+
 login = LoginManager(app)
 login.login_view = "login"
+app_logger = None
 
 if not app.debug:
     if app.config["MAIL_SERVER"]:
@@ -34,5 +37,5 @@ if not app.debug:
         app.logger.addHandler(mail_handler)
     app_logger = init_frontend_logger(logging.INFO)
 
-from src.app import routes
-from src.app.models import researcher, gene
+from src.app import routes, errors
+from src.app.models import researcher, gene, pipeline_run_service, pipeline_run

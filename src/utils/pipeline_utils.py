@@ -10,9 +10,9 @@ from pathlib import Path
 from datetime import datetime, time, UTC
 import pandas as pd
 from glob import glob
-from utils.logging_utils import LoggingUtils, LogFileCreationError
-from utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
-from utils.references import (
+from src.utils.logging_utils import LoggingUtils, LogFileCreationError
+from src.utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
+from src.utils.references import (
     genes_file_name,
     gene_type_count_out_file,
     gene_annotations_file_name,

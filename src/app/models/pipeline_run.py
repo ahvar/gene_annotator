@@ -15,9 +15,15 @@ class PipelineRun(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     pipeline_name: so.Mapped[str] = so.mapped_column(sa.String(140))
     pipeline_type: so.Mapped[str] = so.mapped_column(sa.String(140))
-    researcher_id: so.Mapped[int] = so.mapped_column(sa.ForeignKey("researcher.id"), name="fk_pipeline_run_researcher_id", nullable=False)
-    researcher: so.Mapped["Researcher"] = so.relationship("Researcher", back_populates="run")
-    #results: so.Mapped[list["Results"]] = so.relationship("Result", back_populates=)
+    researcher_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey("researcher.id"),
+        name="fk_pipeline_run_researcher_id",
+        nullable=False,
+    )
+    researcher: so.Mapped["Researcher"] = so.relationship(
+        "Researcher", back_populates="runs"
+    )
+    # results: so.Mapped[list["Results"]] = so.relationship("Result", back_populates=)
     timestamp: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
@@ -27,6 +33,7 @@ class PipelineRun(db.Model):
     loaded_at: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
+
     @property
     def formatted_timestamp(self):
         return self.timestamp.strftime("%Y-%m-%d %H:%M:%S")

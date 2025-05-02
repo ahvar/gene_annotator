@@ -21,7 +21,7 @@
                 </tr>
             </thead>
             <tbody>
-            {% for gene in genes %}
+            {% for gene in genes.items %}
                 <tr>
                     <td>{{ gene.gene_stable_id }}</td>
                     <td>{{ gene.gene_type }}</td>
@@ -48,7 +48,7 @@
                 </tr>
             </thead>
             <body>
-            {% for annotation in annotations %}
+            {% for annotation in annotations.items %}
                 <tr>
                     <td>{{ annotation.gene_stable_id }}</td>
                     <td>{{ annotation.hgnc_id }}</td>
