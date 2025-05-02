@@ -68,24 +68,17 @@ def login():
             flash("Invalid username or password")
             return redirect(url_for("login"))
         login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get("next")
+        next_page = request.args.get("next", "index")
         if next_page:
             parsed_url = urlsplit(next_page)
-            if parsed_url.netloc or parsed_url.scheme:
-                # URL contains domain or protocol - potential security risk
+            if parsed_url.netloc != "" or parsed_url.scheme:
                 frontend_logger.warning(
                     f"Blocked redirect to external URL: {next_page}"
                 )
                 next_page = "index"
-            elif not next_page.startswith("/"):
-                next_page = f"/{next_page}"
-        else:
-            next_page = "index"
-
-        # if not next_page or urlsplit(next_page).netloc != "":
-        #    next_page = "index"
-        # The argument to url_for() is the endpoint name, which is the name of the view function.
-        return redirect(url_for(next_page.lstrip("/")))
+            else:
+                next_page = next_page.lstrip("/") or "index"
+        return redirect(url_for(next_page))
     return render_template("login.html", title="Sign In", form=form)
 
 
