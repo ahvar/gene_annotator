@@ -8,10 +8,11 @@ from wtforms import (
     DateField,
     FloatField,
 )
-from wtforms.validators import DataRequired, ValidationError, Email, EqualTo
+from wtforms.validators import DataRequired, ValidationError, Email, EqualTo, Length
 import sqlalchemy as sa
-from app import db
+from src.app import db
 from src.app.models.researcher import Researcher
+from src.app.models.gene import Gene, GeneAnnotation
 
 
 class LoginForm(FlaskForm):
@@ -23,6 +24,7 @@ class LoginForm(FlaskForm):
 
 class GeneAnnotationForm(FlaskForm):
     """Form for manually entering gene annotations"""
+
     gene_stable_id = StringField("Gene Stable ID", validators=[DataRequired()])
     hgnc_id = StringField("HGNC ID")
     panther_id = StringField("Panther ID")
@@ -56,6 +58,27 @@ class RegistrationForm(FlaskForm):
         )
         if researcher is not None:
             raise ValidationError("Please use a different email address")
+
+
+class EditProfileForm(FlaskForm):
+    researcher_name = StringField("Researcher Name", validators=[DataRequired()])
+    about_me = TextAreaField("About Me", validators=[Length(min=0, max=140)])
+    submit = SubmitField("Submit")
+
+    def __init__(self, original_researcher_name, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.original_researcher_name = original_researcher_name
+
+    def validate_username(self, researcher_name):
+        if researcher_name.data != self.original_researcher_name:
+            researcher = db.session.scalar(
+                sa.select(Researcher).where(
+                    Researcher.researcher_name == researcher_name.data
+                )
+            )
+            if researcher is not None:
+                raise ValidationError("Please use a different researcher name.")
+
 
 class EmptyForm(FlaskForm):
     submit = SubmitField("Submit")

@@ -7,7 +7,7 @@
             <td>
                 <h1>Researcher: {{ researcher.researcher_name }}</h1>
                 {% if researcher.about_me %}<p>{{ researcher.about_me }}</p>{% endif %}
-                {% if researcher.last_seen %}<p>{{ researcher.last_seen }}</p>{% endif %}
+                {% if researcher.last_seen %}<p>Last seen: {{ researcher.last_seen }}</p>{% endif %}
                 <p>{{ researcher.followers_count() }} followers, {{ researcher.following_count() }} following.</p>
                 {% if researcher == current_user %}
                 <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
@@ -20,7 +20,7 @@
                 </p>
                 {% else %}
                 <p>
-                    <form action="{{ url_for('unfollow', researcher=researcher.researcher_name) }}" method="post">
+                    <form action="{{ url_for('unfollow', researcher_name=researcher.researcher_name) }}" method="post">
                         {{ form.hidden_tag() }}
                         {{ form.submit(value='Unfollow') }}
                     </form>
@@ -28,9 +28,39 @@
                 {% endif %}
             </td>
         </tr>
+    
     </table>
+    
+    {% if researcher == current_user %}
+    <div class="followed-activity">
+        <h2>Activity from Followed Researchers</h2>
+        {% set followed_runs = researcher.following_pipeline_runs() %}
+        {% if followed_runs %}
+            {% for id, name, total, pipelines in followed_runs %}
+            <div class="researcher-activity">
+                <h3>{{ name }}</h3>
+                <p>Pipeline runs in last 3 months: {{ total }}</p>
+                {% if pipelines %}
+                <p>Pipelines run: {{ pipelines|join(', ') }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+            <p>No recent pipeline activity from followed researchers.</p>
+        {% endif %}
+    </div>
     <hr>
+    {% endif %}
+
+    <h2>Pipeline Runs</h2>
     {% for run in runs %}
         {% include '_run.html' %}
     {% endfor %}
+    
+    {% if prev_url %}
+        <a href="{{ prev_url }}">Previous</a>
+    {% endif %}
+    {% if next_url %}
+        <a href="{{ next_url }}">Next</a>
+    {% endif %}
 {% endblock %}
