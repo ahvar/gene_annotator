@@ -6,7 +6,11 @@
         <form action="{{ url_for('run_pipeline' ) }}" method="post">
             <button type="submit" class="btn btn-primary">Run Pipeline</button>
         </form>
-        <p class="text-muted">Click "Run Pipeline" to process and merge datasets</p>
+        {% if latest_run %}
+        <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">View Latest Results</a>
+        <p class="text-muted">Last run: {{ latest_run.formatted_timestamp }} 
+            by {{ latest_run.researcher.researcher_name }}</p>
+        {% endif %}
     </div>
     <div class="dataset-tables">
         <h2>Genes Dataset</h2>

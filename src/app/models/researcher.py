@@ -1,3 +1,4 @@
+from dateutil.relativedelta import relativedelta
 from typing import Optional
 from hashlib import md5
 from flask_login import UserMixin
@@ -99,21 +100,14 @@ class Researcher(UserMixin, db.Model):
         Returns a list of (researcher_id, researcher_name, total pipeline runs, names of pipelines that were run)
         for each researcher that self is following, for pipelines run in the last 3 months.
         """
-        from dateutil.relativedelta import relativedelta
-
         three_months_ago = datetime.now(timezone.utc) - relativedelta(months=3)
-
-        # Query to get pipeline runs from followed researchers
-        query = (
+        base_query = (
             sa.select(
                 Researcher.id,
                 Researcher.researcher_name,
                 sa.func.count(PipelineRun.id).label("total_runs"),
-                sa.func.array_agg(sa.distinct(PipelineRun.pipeline_name)).label(
-                    "pipeline_names"
-                ),
             )
-            .join(followers, followers.c.followed_id == Researcher.id)
+            .join(followers, followers.c.follower_id == Researcher.id)
             .join(PipelineRun, PipelineRun.researcher_id == Researcher.id)
             .where(followers.c.follower_id == self.id)
             .where(PipelineRun.timestamp >= three_months_ago)
@@ -121,7 +115,19 @@ class Researcher(UserMixin, db.Model):
             .order_by(sa.desc("total_runs"))
         )
 
-        return db.session.execute(query).all()
+        results = []
+        for researcher_id, researcher_name, total_runs in db.session.execute(
+            base_query
+        ).all():
+            pipeline_names_query = (
+                sa.select(sa.func.group_concat(sa.distinct(PipelineRun.pipeline_name)))
+                .where(PipelineRun.researcher_id == researcher_id)
+                .where(PipelineRun.timestamp >= three_months_ago)
+            )
+            pipeline_names = db.session.scalar(pipeline_names_query)
+            pipeline_names = pipeline_names.split(",") if pipeline_names else []
+            results.append((researcher_id, researcher_name, total_runs, pipeline_names))
+        return results
 
 
 @login.user_loader

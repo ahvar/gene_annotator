@@ -15,7 +15,10 @@ from src.app.forms import (
 from src.app.models.researcher import Researcher
 from src.app.models.gene import Gene, GeneAnnotation
 from src.app.models.pipeline_run import PipelineRun
-from src.app.models.pipeline_run_service import process_pipeline_run
+from src.app.models.pipeline_run_service import (
+    process_pipeline_run,
+    load_pipeline_results_into_db,
+)
 from src.utils.references import excluded_tigrfam_vals, GENE_ANNOTATOR_FRONTEND
 from src.utils.pipeline_utils import validate_outputdir
 import sqlalchemy as sa
@@ -29,6 +32,8 @@ frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
 def index():
     """Home page with pipeline controls and datasets"""
     page = request.args.get("page", 1, type=int)
+
+    latest_run = get_latest_pipeline_run()
 
     genes = get_paginated_genes(page)
     annotations = get_paginated_annotations(page)
@@ -111,7 +116,6 @@ def get_pagination(model, page, order_by=None, per_page_config="GENES_PER_PAGE")
     )
 
 
-# Replace existing functions with calls to generic helper
 def get_paginated_genes(page):
     """Get paginated genes"""
     return get_pagination(Gene, page)
@@ -183,20 +187,72 @@ def explore_annotations():
 def run_pipeline():
     """Execute pipeline steps and store results in database"""
     try:
-        # Create timestamped output directory
-        timestamp = datetime.now(UTC).strftime("%m%d%yT%H%M%S")
-        output_dir = Path(f"output_{timestamp}")
-        output_dir = validate_outputdir(None, output_dir)
+        run = process_pipeline_run()
 
-        # Process pipeline and load results to DB
-        run = process_pipeline_run(output_dir)
-
-        flash("Pipeline run complete! Viewing Results.")
-        return redirect(url_for("pipeline_run_results", run_id=run.id))
+        if run and run.status == "complete":
+            flash("Pipeline run complete! Viewing Results.")
+            return redirect(url_for("pipeline_run_results", run_id=run.id))
+        else:
+            flash("Pipeline run failed", "error")
+            frontend_logger.error("Pipeline run failure.")
+            return redirect(url_for("index"))
 
     except Exception as e:
         flash(f"Pipeline error: {str(e)}", "error")
         return redirect(url_for("index"))
+
+
+def get_latest_pipeline_run():
+    """Get the most recent pipeline run results"""
+    db_run = db.session.scalar(
+        sa.select(PipelineRun).order_by(PipelineRun.timestamp.desc())
+    )
+    frontend_logger.info(
+        "Retrieved latest pipeline run from database: %s",
+        db_run.id if db_run else "None",
+    )
+
+    project_root = Path(__file__).resolve().parent.parent.parent
+    etl_dir = project_root / "src" / "etl"
+    output_dirs = [d for d in etl_dir.glob("output_*") if d.is_dir()]
+    if not output_dirs:
+        frontend_logger.info("No CLI output directories found in %s", etl_dir)
+        return db_run
+
+    latest_dir = sorted(
+        output_dirs,
+        key=lambda d: datetime.strptime(d.name.replace("output_", ""), "%m%d%yT%H%M%S"),
+        reverse=True,
+    )[0]
+    frontend_logger.info("Found latest CLI output directory: %s", latest_dir)
+
+    cli_timestamp = datetime.strptime(
+        latest_dir.name.replace("output_", ""), "%m%d%yT%H%M%S"
+    ).replace(tzinfo=timezone.utc)
+
+    if not db_run or cli_timestamp > db_run.timestamp:
+        frontend_logger.info("Found more recent CLI results, loading into database")
+        results_file = latest_dir / "results" / "final_results.csv"
+        if results_file.exists():
+            try:
+                load_pipeline_results_into_db(results_file)
+                run = PipelineRun(
+                    timestamp=cli_timestamp,
+                    output_dir=str(latest_dir),
+                    pipeline_name="Gene Annotation Pipeline",
+                    pipeline_type="CLI",
+                    researcher_id=current_user.id,
+                    status="completed",
+                )
+                db.session.add(run)
+                db.session.commit()
+                frontend_logger.info("Successfully loaded CLI results into database")
+                return run
+            except Exception as e:
+                frontend_logger.error("Failed to load CLI results: %s", str(e))
+    else:
+        frontend_logger.info("Using more recent run pulled from database.")
+    return db_run
 
 
 @app.route("/register", methods=["GET", "POST"])

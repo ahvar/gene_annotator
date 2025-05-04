@@ -63,8 +63,8 @@ def validate_outputdir(ctx: typer.Context, etl_output_dir: Path) -> Path:
         user_specified_output_dir = etl_output_dir / f"output_{timestamp}"
         return user_specified_output_dir
     if etl_output_dir and not etl_output_dir.exists():
-        pipeline_logger.error(f"The output directory for GATE: {etl_output_dir}")
-        raise typer.BadParameter(f"GATE output directory: {etl_output_dir}")
+        pipeline_logger.error(f"output directory does not exist: {etl_output_dir}")
+        raise typer.BadParameter(f"output directory: {etl_output_dir}")
     if not etl_output_dir:
         pipeline_logger.debug("Creating default output directory and logfile....")
         pipeline_logger.debug("../etl/output_<timestamp>/")
@@ -93,13 +93,13 @@ def validate_inputdir(ctx: typer.Context, etl_input_dir: Path) -> Path:
     return etl_input_dir
 
 
-def validate_results_dir(ctx: typer.Context, results_dir: Path=None) -> Path:
+def validate_results_dir(ctx: typer.Context, results_dir: Path = None) -> Path:
     """
     A user has the option to pass the absolute path to the 'results' directory
     containing pipeline outputs. If no such directory is passed or it does not
     exist, the pipeline finds the 'results' directory from the most recent
     pipeline run.
-    
+
     :params         ctx:    the typer Context object
     :params results_dir:    the 'results' directory containing pipeline outputs
     """
@@ -112,7 +112,6 @@ def validate_results_dir(ctx: typer.Context, results_dir: Path=None) -> Path:
         latest_dir = sorted(output_dirs, key=_parse_timestamp, reverse=True)[0]
         return latest_dir / "results"
     return results_dir
-
 
 
 def validate_style(ctx: typer.Context, style: str) -> str:
@@ -233,7 +232,9 @@ class GeneReader:
      - counting unique genes
     """
 
-    def __init__(self, input_dir: Path = Path(__file__).resolve().parent.parent / "etl" / "data"):
+    def __init__(
+        self, input_dir: Path = Path(__file__).resolve().parent.parent / "etl" / "data"
+    ):
         """
         Construct GeneReader
         :params data_dir: the input directory
