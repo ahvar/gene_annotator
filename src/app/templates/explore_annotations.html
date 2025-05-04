@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ title }}</h1>
+    <div class="dataset-table">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Gene Stable ID</th>
+                    <th>HGNC ID</th>
+                    <th>Panther ID</th>
+                    <th>Tigrfam ID</th>
+                    <th>Wikigene Name</th>
+                    <th>Description</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for annotation in annotations %}
+                <tr>
+                    <td>{{ annotation.gene_stable_id }}</td>
+                    <td>{{ annotation.hgnc_id }}</td>
+                    <td>{{ annotation.panther_id }}</td>
+                    <td>{{ annotation.tigrfam_id }}</td>
+                    <td>{{ annotation.wikigene_name }}</td>
+                    <td>{{ annotation.gene_description }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+        {% if prev_url %}
+            <a href="{{ prev_url }}" class="btn btn-outline-primary">Previous</a>
+        {% endif %}
+        {% if next_url %}
+            <a href="{{ next_url }}" class="btn btn-outline-primary">Next</a>
+        {% endif %}
+    </div>
+{% endblock %}

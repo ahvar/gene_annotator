@@ -19,7 +19,7 @@ Extract or clone all files to your local environment.
 ## Install dependencies:
     # pip install dependencies defined
     $ pip install -r requirements.txt
-## Modify PYTHONPATH for the interpreter in your virtual environment
+## Configure your interpreter's PYTHONPATH
     # from project root, source the export_python_path helper script 
     $ source ./gene_annotator/helper_scripts/export_python_path.sh
 ## Run the tests
@@ -45,12 +45,26 @@ In /usr/local/bin, which is included in the system's PATH environment variable, 
 $ sudo ln -s /path/to/src/gene_annotate /usr/local/bin/gene_annotate
 ```
 
-## Spin up an instance of the Flask server
-TBD
+## Running the Flask Application Locally
 
-## Use Curl to query annotation data
-TBD
+### 1. Set Up the Database
+After activating your virtual environment, initialize and create the database:
 
+```sh
+flask db init
+flask db migrate -m "initial migration"
+flask db upgrade
+```
+
+#### Run dev server
+```sh
+flask run
+```
+By default, the server will run on: http://127.0.0.1:5000
+Login with your credentials or register as a new user.
+
+#### View Datasets
+View the Gene and Gene Annotation Datasets
 
 # Running with Docker
 Here are the steps to build the Gene Annotator container and run it

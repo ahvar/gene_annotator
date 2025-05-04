@@ -1,8 +1,8 @@
-"""fix pipeline run relationship
+"""initial migration
 
-Revision ID: b05da211c81b
+Revision ID: b2b084e75df3
 Revises: 
-Create Date: 2025-05-01 16:06:30.337343
+Create Date: 2025-05-03 21:57:21.795907
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = 'b05da211c81b'
+revision = 'b2b084e75df3'
 down_revision = None
 branch_labels = None
 depends_on = None
