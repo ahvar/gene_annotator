@@ -11,6 +11,7 @@ from src.app.forms import (
     LoginForm,
     EmptyForm,
     EditProfileForm,
+    ResetPasswordRequestForm,
 )
 from src.app.models.researcher import Researcher
 from src.app.models.gene import Gene, GeneAnnotation
@@ -460,3 +461,21 @@ def unfollow(researcher_name):
         return redirect(url_for("researcher", researcher_name=researcher_name))
     else:
         return redirect(url_for("index"))
+
+
+@app.route("/reset_password_request", methods=["GET", "POST"])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        researcher = db.session.scalar(
+            sa.select(Researcher).where(Researcher.email == form.email.data)
+        )
+        if researcher:
+            send_password_reset_email(researcher)
+        flash("Check your email for the instructions to reset your password")
+        return redirect(url_for("login"))
+    return render_template(
+        "reset_password_request.html", title="Reset Password", form=form
+    )
