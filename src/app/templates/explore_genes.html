@@ -3,8 +3,8 @@
 {% block content %}
     <h1>{{ title }}</h1>
     <div class="dataset-table">
-        <table class="table">
-            <thead>
+        <table class="table table-hover table-striped align-middle mb-0">
+            <thead class="table-light">
                 <tr>
                     <th>Gene Stable ID</th>
                     <th>Gene Type</th>
@@ -25,11 +25,19 @@
             {% endfor %}
             </tbody>
         </table>
-        {% if prev_url %}
-            <a href="{{ prev_url }}" class="btn btn-outline-primary">Previous</a>
-        {% endif %}
-        {% if next_url %}
-            <a href="{{ next_url }}" class="btn btn-outline-primary">Next</a>
-        {% endif %}
+        <nav aria-label="Genes navigation">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item{% if not prev_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ prev_url }}">
+                        <span aria-hidden="true">&larr;</span> Previous
+                    </a>
+                </li>
+                <li class="page-item{% if not next_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ next_url }}">
+                        Next <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     </div>
 {% endblock %}

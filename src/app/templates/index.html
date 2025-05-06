@@ -1,20 +1,23 @@
 {% extends "base.html" %}
-
+{% import "bootstrap_wtf.html" as wtf %}
 {% block content %}
     <h1>Gene Database</h1>
+    {% if form %}
+    {{ wtf.quick_form(form) }}
+    {% endif %}
+    {% if latest_run %}
+    <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">View Latest Results</a>
+        <p class="text-muted">Last run: {{ latest_run.formatted_timestamp }} 
+            by {{ latest_run.researcher.researcher_name }}</p>
+    {% endif %}
     <div class="pipeline-controls">
         <form action="{{ url_for('run_pipeline' ) }}" method="post">
             <button type="submit" class="btn btn-primary">Run Pipeline</button>
         </form>
-        {% if latest_run %}
-        <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">View Latest Results</a>
-        <p class="text-muted">Last run: {{ latest_run.formatted_timestamp }} 
-            by {{ latest_run.researcher.researcher_name }}</p>
-        {% endif %}
     </div>
     <div class="dataset-tables">
         <h2>Genes Dataset</h2>
-        <table class="table">
+        <table class="table table-hover">
             <thead>
                 <tr>
                     <th>Gene Stable ID</th>
@@ -36,11 +39,23 @@
             {% endfor %}
             </tbody>
         </table>
-        {% if genes.has_prev %}<a href="{{ prev_url }}">Previous</a>{% endif %}
-        {% if genes.has_next %}<a href="{{ next_url }}">Next</a>{% endif %}
+        <nav aria-label="Genes navigation">
+            <ul class="pagination">
+                <li class="page-item{% if not prev_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ prev_url }}">
+                        <span aria-hidden="true">&larr;</span> Previous
+                    </a>
+                </li>
+                <li class="page-item{% if not next_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ next_url }}">
+                        Next <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
 
         <h2>Gene Annotations Dataset</h2>
-        <table class="table">
+        <table class="table table-hover">
             <thead>
                 <tr>
                     <th>Gene Stable ID</th>
@@ -64,7 +79,19 @@
             {% endfor %}    
             </body>
         </table>
-        {% if annotations.has_prev %}<a href="{{ annotations_prev_url }}">Previous</a>{% endif %}
-        {% if annotations.has_next %}<a href="{{ annotations_next_url }}">Next</a>{% endif %}
+        <nav aria-label="Annotations navigation">
+            <ul class="pagination">
+                <li class="page-item{% if not annotations_prev_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ annotations_prev_url }}">
+                        <span aria-hidden="true">&larr;</span> Previous
+                    </a>
+                </li>
+                <li class="page-item{% if not annotations_next_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ annotations_next_url }}">
+                        Next <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     </div>
 {% endblock %}
