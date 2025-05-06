@@ -11,6 +11,8 @@ from src.app.forms import (
     LoginForm,
     EmptyForm,
     EditProfileForm,
+    ResetPasswordRequestForm,
+    ResetPasswordForm,
 )
 from src.app.models.researcher import Researcher
 from src.app.models.gene import Gene, GeneAnnotation
@@ -19,6 +21,7 @@ from src.app.models.pipeline_run_service import (
     process_pipeline_run,
     load_pipeline_results_into_db,
 )
+from src.app.email import send_password_reset_email
 from src.utils.references import excluded_tigrfam_vals, GENE_ANNOTATOR_FRONTEND
 from src.utils.pipeline_utils import validate_outputdir
 import sqlalchemy as sa
@@ -460,3 +463,37 @@ def unfollow(researcher_name):
         return redirect(url_for("researcher", researcher_name=researcher_name))
     else:
         return redirect(url_for("index"))
+
+
+@app.route("/reset_password_request", methods=["GET", "POST"])
+def reset_password_request():
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    form = ResetPasswordRequestForm()
+    if form.validate_on_submit():
+        researcher = db.session.scalar(
+            sa.select(Researcher).where(Researcher.email == form.email.data)
+        )
+        if researcher:
+            send_password_reset_email(researcher)
+        flash("Check your email for the instructions to reset your password")
+        return redirect(url_for("login"))
+    return render_template(
+        "reset_password_request.html", title="Reset Password", form=form
+    )
+
+
+@app.route("/reset_password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    if current_user.is_authenticated:
+        return redirect(url_for("index"))
+    researcher = Researcher.verify_reset_password(token)
+    if not researcher:
+        return redirect(url_for("index"))
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        researcher.set_password(form.password.data)
+        db.session.commit()
+        flash("Your password has been reset")
+        return redirect(url_for("login"))
+    return render_template("reset_password.html", form=form)
