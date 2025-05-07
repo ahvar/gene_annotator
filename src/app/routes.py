@@ -21,7 +21,7 @@ from src.app.models.pipeline_run_service import (
     process_pipeline_run,
     load_pipeline_results_into_db,
 )
-from src.app.email import send_password_reset_email
+from src.app.email_service import send_password_reset_email
 from src.utils.references import excluded_tigrfam_vals, GENE_ANNOTATOR_FRONTEND
 from src.utils.pipeline_utils import validate_outputdir
 import sqlalchemy as sa
