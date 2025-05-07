@@ -2,21 +2,23 @@ import os
 import logging
 from logging.handlers import SMTPHandler
 from flask import Flask
-from src.app.config import Config
-from src.utils.pipeline_utils import init_frontend_logger
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_mail import Mail
 
+from src.config import Config
+
 app = Flask(__name__)
-mail = Mail(app)
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
-
 login = LoginManager(app)
 login.login_view = "login"
+mail = Mail(app)
+
+from src.utils.pipeline_utils import init_frontend_logger
+
 app_logger = None
 
 if not app.debug:

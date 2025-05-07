@@ -1,7 +1,8 @@
 from threading import Thread
-from flask import render_template
+
+# from flask import render_template
 from flask_mail import Message
-from src.app import mail, app
+from src.app import app, mail
 
 
 def send_async_email(app, msg):
@@ -17,6 +18,8 @@ def send_email(subject, sender, recipients, text_body, html_body):
 
 
 def send_password_reset_email(researcher):
+    from flask import render_template
+
     token = researcher.get_reset_password_token()
     send_email(
         "[Gene Annotator] Reset Your Password",

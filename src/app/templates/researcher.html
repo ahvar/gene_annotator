@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <table>
-        <tr valign="top">
-            <td><img src="{{ researcher.avatar(128) }}"></td>
+    <table class="table table-hover">
+        <tr>
+            <td width="256px"><img src="{{ researcher.avatar(256) }}"></td>
             <td>
                 <h1>Researcher: {{ researcher.researcher_name }}</h1>
                 {% if researcher.about_me %}<p>{{ researcher.about_me }}</p>{% endif %}
@@ -57,10 +57,18 @@
         {% include '_run.html' %}
     {% endfor %}
     
-    {% if prev_url %}
-        <a href="{{ prev_url }}">Previous</a>
-    {% endif %}
-    {% if next_url %}
-        <a href="{{ next_url }}">Next</a>
-    {% endif %}
+    <nav aria-label="Pipeline runs navigation">
+        <ul class="pagination">
+            <li class="page-item{% if not prev_url %} disabled{% endif %}">
+                <a class="page-link" href="{{ prev_url }}">
+                    <span aria-hidden="true">&larr;</span> Previous
+                </a>
+            </li>
+            <li class="page-item{% if not next_url %} disabled{% endif %}">
+                <a class="page-link" href="{{ next_url }}">
+                    Next <span aria-hidden="true">&rarr;</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
 {% endblock %}
