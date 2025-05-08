@@ -1,9 +1,10 @@
 import logging
 from datetime import datetime, UTC, timezone
 from pathlib import Path
-from flask import render_template, flash, redirect, url_for, request
+from flask import render_template, flash, redirect, url_for, request, g
 from urllib.parse import urlsplit
 from flask_login import current_user, login_user, logout_user, login_required
+from flask_babel import _, get_locale
 from src.app import app, db
 from src.app.forms import (
     GeneAnnotationForm,
@@ -73,7 +74,7 @@ def login():
             )
         )
         if user is None or not user.check_password(form.password.data):
-            flash("Invalid username or password")
+            flash(_("Invalid username or password"))
             return redirect(url_for("login"))
         login_user(user, remember=form.remember_me.data)
         next_page = request.args.get("next", "index")
@@ -81,7 +82,10 @@ def login():
             parsed_url = urlsplit(next_page)
             if parsed_url.netloc != "" or parsed_url.scheme:
                 frontend_logger.warning(
-                    f"Blocked redirect to external URL: {next_page}"
+                    _(
+                        "Blocked redirect to external URL: %{next_page}s",
+                        next_page=next_page,
+                    )
                 )
                 next_page = "index"
             else:
@@ -137,7 +141,7 @@ def edit_profile():
         current_user.researcher_name = form.researcher_name.data
         current_user.about_me = form.about_me.data
         db.session.commit()
-        flash("Your changes have been saved")
+        flash(_("Your changes have been saved"))
         return redirect(url_for("edit_profile"))
     elif request.method == "GET":
         form.researcher_name.data = current_user.researcher_name
@@ -193,15 +197,15 @@ def run_pipeline():
         run = process_pipeline_run()
 
         if run and run.status == "complete":
-            flash("Pipeline run complete! Viewing Results.")
+            flash(_("Pipeline run complete! Viewing Results."))
             return redirect(url_for("pipeline_run_results", run_id=run.id))
         else:
-            flash("Pipeline run failed", "error")
-            frontend_logger.error("Pipeline run failure.")
+            flash(_("Pipeline run failed"))
+            frontend_logger.error(_("Pipeline run failure."))
             return redirect(url_for("index"))
 
     except Exception as e:
-        flash(f"Pipeline error: {str(e)}", "error")
+        flash(_("Pipeline error: %s", str(e)))
         return redirect(url_for("index"))
 
 
@@ -211,15 +215,19 @@ def get_latest_pipeline_run():
         sa.select(PipelineRun).order_by(PipelineRun.timestamp.desc())
     )
     frontend_logger.info(
-        "Retrieved latest pipeline run from database: %s",
-        db_run.id if db_run else "None",
+        _(
+            "Retrieved latest pipeline run from database: %s",
+            db_run.id if db_run else "None",
+        ),  # NOTE: not sure if translation will work here
     )
 
     project_root = Path(__file__).resolve().parent.parent.parent
     etl_dir = project_root / "src" / "etl"
     output_dirs = [d for d in etl_dir.glob("output_*") if d.is_dir()]
     if not output_dirs:
-        frontend_logger.info("No CLI output directories found in %s", etl_dir)
+        frontend_logger.info(
+            _("No CLI output directories found in %s", etl_dir)
+        )  # NOTE: not sure if translation will work
         return db_run
 
     latest_dir = sorted(
@@ -227,34 +235,36 @@ def get_latest_pipeline_run():
         key=lambda d: datetime.strptime(d.name.replace("output_", ""), "%m%d%yT%H%M%S"),
         reverse=True,
     )[0]
-    frontend_logger.info("Found latest CLI output directory: %s", latest_dir)
+    frontend_logger.info(
+        _("Found latest CLI output directory: %s", latest_dir)
+    )  # NOTE: not sure if translation will work
 
     cli_timestamp = datetime.strptime(
         latest_dir.name.replace("output_", ""), "%m%d%yT%H%M%S"
     ).replace(tzinfo=timezone.utc)
 
     if not db_run or cli_timestamp > db_run.timestamp:
-        frontend_logger.info("Found more recent CLI results, loading into database")
-        results_file = latest_dir / "results" / "final_results.csv"
+        frontend_logger.info(_("Found more recent CLI results, loading into database"))
+        results_file = latest_dir / _("results") / _("final_results") + ".csv"
         if results_file.exists():
             try:
                 load_pipeline_results_into_db(results_file)
                 run = PipelineRun(
                     timestamp=cli_timestamp,
                     output_dir=str(latest_dir),
-                    pipeline_name="Gene Annotation Pipeline",
+                    pipeline_name=_("Gene Annotation Pipeline"),
                     pipeline_type="CLI",
                     researcher_id=current_user.id,
-                    status="completed",
+                    status=_("completed"),
                 )
                 db.session.add(run)
                 db.session.commit()
-                frontend_logger.info("Successfully loaded CLI results into database")
+                frontend_logger.info(_("Successfully loaded CLI results into database"))
                 return run
             except Exception as e:
-                frontend_logger.error("Failed to load CLI results: %s", str(e))
+                frontend_logger.error(_("Failed to load CLI results: %s", str(e)))
     else:
-        frontend_logger.info("Using more recent run pulled from database.")
+        frontend_logger.info(_("Using more recent run pulled from database."))
     return db_run
 
 
@@ -270,7 +280,7 @@ def register():
         user.set_password(form.password.data)
         db.session.add(user)
         db.session.commit()
-        flash("Congratulations, you are now a registered researcher!")
+        flash(_("Congratulations, you are now a registered researcher!"))
         return redirect(url_for("login"))
     return render_template("register.html", title="Register", form=form)
 
@@ -295,7 +305,7 @@ def add_annotation():
                 gene_description=form.gene_description.data,
             )
             db.session.add(annotation)
-            flash("New gene annotation added!")
+            flash(_("New gene annotation added!"))
         else:
             # Only update if values have changed
             changed = False
@@ -313,9 +323,9 @@ def add_annotation():
                 changed = True
 
             if changed:
-                flash("Gene annotation updated!")
+                flash(_("Gene annotation updated!"))
             else:
-                flash("No changes to update")
+                flash(_("No changes to update"))
         db.session.commit()
         return redirect(url_for("index"))
     return render_template("gene_annotation.html", title="Gene Annotation", form=form)
@@ -372,8 +382,10 @@ def pipeline_run_results(run_id):
     if run is None:
         return render_template(
             "no_results.html",
-            title="No Results Found",
-            message="This pipeline run was not found. Would you like to execute a new run?",
+            title=_("No Results Found"),
+            message=_(
+                "This pipeline run was not found. Would you like to execute a new run?"
+            ),
             run_id=run_id,
         )
 
@@ -419,6 +431,7 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.now(timezone.utc)
         db.session.commit()
+    g.locale = str(get_locale())
 
 
 @app.route("/follow/<researcher_name>", methods=["POST"])
@@ -430,14 +443,24 @@ def follow(researcher_name):
             sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
         )
         if researcher is None:
-            flash(f"Researcher {researcher_name} not found.")
+            flash(
+                _(
+                    "Researcher %{researcher_name}s not found.",
+                    researcher_name=researcher_name,
+                )
+            )
             return redirect(url_for("index"))
         if researcher == current_user:
-            flash("You cannot follow yourself!")
+            flash(_("You cannot follow yourself!"))
             return redirect(url_for("researcher", researcher_name=researcher_name))
         current_user.follow(researcher_name)
         db.session.commit()
-        flash(f"You are following {researcher_name}!")
+        flash(
+            _(
+                "You are following %{researcher_name}s !",
+                researcher_name=researcher_name,
+            )
+        )
         return redirect(url_for("researcher", researcher_name=researcher_name))
     else:
         return redirect(url_for("index"))
@@ -452,14 +475,24 @@ def unfollow(researcher_name):
             sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
         )
         if researcher is None:
-            flash(f"Researcher {researcher_name} is not found.")
+            flash(
+                _(
+                    "Researcher %{researcher_name}s is not found.",
+                    researcher_name=researcher_name,
+                )
+            )
             return redirect(url_for("index"))
         if researcher == current_user:
-            flash("You cannot unfollow yourself!")
+            flash(_("You cannot unfollow yourself!"))
             return redirect(url_for("researcher", researcher_name=researcher_name))
         current_user.unfollow(researcher)
         db.session.commit()
-        flash(f"You are not following {researcher_name}")
+        flash(
+            _(
+                "You are not following %{researcher_name}s",
+                researcher_name=researcher_name,
+            )
+        )
         return redirect(url_for("researcher", researcher_name=researcher_name))
     else:
         return redirect(url_for("index"))
@@ -476,7 +509,7 @@ def reset_password_request():
         )
         if researcher:
             send_password_reset_email(researcher)
-        flash("Check your email for the instructions to reset your password")
+        flash(_("Check your email for the instructions to reset your password"))
         return redirect(url_for("login"))
     return render_template(
         "reset_password_request.html", title="Reset Password", form=form
@@ -494,6 +527,6 @@ def reset_password(token):
     if form.validate_on_submit():
         researcher.set_password(form.password.data)
         db.session.commit()
-        flash("Your password has been reset")
+        flash(_("Your password has been reset"))
         return redirect(url_for("login"))
     return render_template("reset_password.html", form=form)
