@@ -11,7 +11,7 @@
             </a>
             Pipeline Name: {{ run.pipeline_name }}<br>
             Pipeline Type: {{ run.pipeline_type }}<br>
-            Run at: {{ run.formatted_timestamp }}<br>
+            Run at: {{ moment(run.formatted_timestamp).fromNow() }}<br>
             Status: {{ run.status }}<br>
             <a href="{{ url_for('pipeline_run_results', run_id=run.id) }}">View Results</a>
         </td>
