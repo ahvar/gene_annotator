@@ -83,7 +83,7 @@ def login():
             if parsed_url.netloc != "" or parsed_url.scheme:
                 frontend_logger.warning(
                     _(
-                        "Blocked redirect to external URL: %{next_page}s",
+                        "Blocked redirect to external URL: %(next_page)s",
                         next_page=next_page,
                     )
                 )
@@ -216,9 +216,9 @@ def get_latest_pipeline_run():
     )
     frontend_logger.info(
         _(
-            "Retrieved latest pipeline run from database: %s",
-            db_run.id if db_run else "None",
-        ),  # NOTE: not sure if translation will work here
+            "Retrieved latest pipeline run from database: %(run_id)s",
+            run_id=db_run.id if db_run else "None",
+        ),
     )
 
     project_root = Path(__file__).resolve().parent.parent.parent
@@ -226,8 +226,9 @@ def get_latest_pipeline_run():
     output_dirs = [d for d in etl_dir.glob("output_*") if d.is_dir()]
     if not output_dirs:
         frontend_logger.info(
-            _("No CLI output directories found in %s", etl_dir)
-        )  # NOTE: not sure if translation will work
+            _("No CLI output directories found in %(dir)s"),
+            {"dir": str(etl_dir)},
+        )
         return db_run
 
     latest_dir = sorted(
@@ -236,8 +237,9 @@ def get_latest_pipeline_run():
         reverse=True,
     )[0]
     frontend_logger.info(
-        _("Found latest CLI output directory: %s", latest_dir)
-    )  # NOTE: not sure if translation will work
+        _("Found latest CLI output directory: %(latest_dir)s"),
+        {"latest_dir": str(latest_dir)},
+    )
 
     cli_timestamp = datetime.strptime(
         latest_dir.name.replace("output_", ""), "%m%d%yT%H%M%S"
@@ -262,7 +264,7 @@ def get_latest_pipeline_run():
                 frontend_logger.info(_("Successfully loaded CLI results into database"))
                 return run
             except Exception as e:
-                frontend_logger.error(_("Failed to load CLI results: %s", str(e)))
+                frontend_logger.error(_("Failed to load CLI results: %(e)s", str(e)))
     else:
         frontend_logger.info(_("Using more recent run pulled from database."))
     return db_run
@@ -457,7 +459,7 @@ def follow(researcher_name):
         db.session.commit()
         flash(
             _(
-                "You are following %{researcher_name}s !",
+                "You are following %(researcher_name)s!",
                 researcher_name=researcher_name,
             )
         )
@@ -477,7 +479,7 @@ def unfollow(researcher_name):
         if researcher is None:
             flash(
                 _(
-                    "Researcher %{researcher_name}s is not found.",
+                    "Researcher %(researcher_name)s is not found.",
                     researcher_name=researcher_name,
                 )
             )
@@ -489,7 +491,7 @@ def unfollow(researcher_name):
         db.session.commit()
         flash(
             _(
-                "You are not following %{researcher_name}s",
+                "You are not following %(researcher_name)s",
                 researcher_name=researcher_name,
             )
         )
