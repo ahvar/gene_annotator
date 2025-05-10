@@ -2,7 +2,7 @@
 {% import "bootstrap_wtf.html" as wtf %}
 
 {% block content %}
-    <h1>{{ title }}</h1>
+    <h1>{{ _('%(title)s', title=title) }}</h1>
     <div class="row">
         <div class="col-md-8">
             <div class="card shadow-sm">

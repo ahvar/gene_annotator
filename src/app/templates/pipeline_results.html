@@ -4,10 +4,10 @@
     <div class="card shadow-sm mb-4">
         <div class="card-header bg-light">
             <div class="run-info">
-                <p class="mb-1"><strong>Run by:</strong> {{ run.researcher.researcher_name }}</p>
-                <p class="mb-1"><strong>Pipeline:</strong> {{ run.pipeline_name }}</p>
-                <p class="mb-1"><strong>Started:</strong> {{ run.formatted_timestamp }}</p>
-                <p class="mb-0"><strong>Status:</strong> {{ run.status }}</p>
+                <p class="mb-1"><strong>{{ _('Run by') }}:</strong> {{ run.researcher.researcher_name }}</p>
+                <p class="mb-1"><strong>{{ _('Pipeline') }}:</strong> {{ run.pipeline_name }}</p>
+                <p class="mb-1"><strong>{{ _('Started') }}:</strong> {{ run.formatted_timestamp }}</p>
+                <p class="mb-0"><strong>{{ _('Status') }}:</strong> {{ run.status }}</p>
             </div>
         </div>
         <div class="card-body">
@@ -15,14 +15,14 @@
                 <table class="table table-hover table-striped align-middle mb-0">
                     <thead class="table-light">
                         <tr>
-                            <th>Gene Stable ID</th>
-                            <th>Gene Type</th>
-                            <th>Gene Name</th>
-                            <th>HGNC ID</th>
-                            <th>HGNC Name</th>
-                            <th>Panther ID</th>
-                            <th>Tigrfam ID</th>
-                            <th>Wikigene Name</th>
+                            <th>{{ _('Gene Stable ID') }}</th>
+                            <th>{{ _('Gene Type') }}</th>
+                            <th>{{ _('Gene Name') }}</th>
+                            <th>{{ _('HGNC ID') }}</th>
+                            <th>{{ _('HGNC Name') }}</th>
+                            <th>{{ _('Panther ID') }}</th>
+                            <th>{{ _('Tigrfam ID') }}</th>
+                            <th>{{ _('Wikigene Name') }}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -47,12 +47,12 @@
         <ul class="pagination">
             <li class="page-item{% if not prev_url %} disabled{% endif %}">
                 <a class="page-link" href="{{ prev_url }}">
-                    <span aria-hidden="true">&larr;</span> Previous
+                    <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
                 </a>
             </li>
             <li class="page-item{% if not next_url %} disabled{% endif %}">
                 <a class="page-link" href="{{ next_url }}">
-                    Next <span aria-hidden="true">&rarr;</span>
+                   {{ _('Next') }}<span aria-hidden="true">&rarr;</span>
                 </a>
             </li>
         </ul>
