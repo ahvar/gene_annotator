@@ -1,0 +1,246 @@
+# Spanish translations for PROJECT.
+# Copyright (C) 2025 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2025.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2025-05-10 19:49-0500\n"
+"PO-Revision-Date: 2025-05-10 19:50-0500\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: es\n"
+"Language-Team: es <LL@li.org>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.17.0\n"
+
+#: app/email_service.py:26
+msgid "[Gene Annotator] Reset Your Password"
+msgstr "[Anotador de Genes] Solicitar restablecimiento de contraseña"
+
+#: app/forms.py:20 app/forms.py:65
+msgid "Researcher Name"
+msgstr "Nombre del Investigador"
+
+#: app/forms.py:21 app/forms.py:41 app/forms.py:90
+msgid "Password"
+msgstr "Contraseña"
+
+#: app/forms.py:22
+msgid "Remember Me"
+msgstr "Recuérdame"
+
+#: app/forms.py:23 app/templates/login.html:4
+msgid "Sign In"
+msgstr "Iniciar sesión"
+
+#: app/forms.py:29 app/templates/explore_annotations.html:9
+#: app/templates/explore_genes.html:9 app/templates/index.html:26
+#: app/templates/index.html:64 app/templates/pipeline_results.html:18
+msgid "Gene Stable ID"
+msgstr "ID estable del gen"
+
+#: app/forms.py:30 app/templates/explore_annotations.html:10
+#: app/templates/explore_genes.html:13 app/templates/index.html:30
+#: app/templates/index.html:65 app/templates/pipeline_results.html:21
+msgid "HGNC ID"
+msgstr "ID de HGNC"
+
+#: app/forms.py:31 app/templates/explore_annotations.html:11
+#: app/templates/index.html:66 app/templates/pipeline_results.html:23
+msgid "Panther ID"
+msgstr "ID de Panther"
+
+#: app/forms.py:32 app/templates/explore_annotations.html:12
+#: app/templates/index.html:67 app/templates/pipeline_results.html:24
+msgid "Tigrfam ID"
+msgstr "ID de Tigrfam"
+
+#: app/forms.py:33 app/templates/explore_annotations.html:13
+#: app/templates/index.html:68 app/templates/pipeline_results.html:25
+msgid "Wikigene Name"
+msgstr "Nombre en Wikigene"
+
+#: app/forms.py:34
+msgid "Gene Description"
+msgstr "Descripción del gen"
+
+#: app/forms.py:35
+msgid "Search"
+msgstr "Buscar"
+
+#: app/forms.py:39
+msgid "Researcher name"
+msgstr "Nombre del investigador"
+
+#: app/forms.py:40 app/forms.py:85
+msgid "Email"
+msgstr "Correo electrónico"
+
+#: app/forms.py:43 app/forms.py:92
+msgid "Repeat Password"
+msgstr "Repetir contraseña"
+
+#: app/forms.py:45 app/templates/register.html:4
+msgid "Register"
+msgstr "Registrarse"
+
+#: app/forms.py:54
+msgid "Please use a different researcher name"
+msgstr "Por favor usa un nombre de investigador diferente"
+
+#: app/forms.py:61
+msgid "Please use a different email address"
+msgstr "Por favor usa una dirección de correo electrónico diferente"
+
+#: app/forms.py:66
+msgid "About Me"
+msgstr "Sobre mí"
+
+#: app/forms.py:67 app/forms.py:98
+msgid "Submit"
+msgstr "Enviar"
+
+#: app/forms.py:81
+msgid "Please use a different researcher name."
+msgstr "Por favor usa un nombre de investigador diferente."
+
+#: app/forms.py:86 app/forms.py:94
+msgid "Request Password Reset"
+msgstr "Solicitar restablecimiento de contraseña"
+
+#: app/routes.py:77
+msgid "Invalid username or password"
+msgstr "Nombre de usuario o contraseña inválido"
+
+#: app/routes.py:86
+#, python-format
+msgid "Blocked redirect to external URL: %(next_page)s"
+msgstr "Redirección bloqueada a URL externa: %(next_page)s"
+
+#: app/routes.py:144
+msgid "Your changes have been saved"
+msgstr "Tus cambios han sido guardados"
+
+#: app/routes.py:200
+msgid "Pipeline run complete! Viewing Results."
+msgstr "Ejecución del pipeline completa. Mostrando resultados."
+
+#: app/routes.py:203
+msgid "Pipeline run failed"
+msgstr "La ejecución del pipeline falló"
+
+#: app/routes.py:204
+msgid "Pipeline run failure."
+msgstr "Falla en la ejecución del pipeline."
+
+#: app/routes.py:208
+#, python-format
+msgid "Pipeline error: %s"
+msgstr "Error del pipeline: %s"
+
+#: app/routes.py:220
+#, python-format
+msgid "Retrieved latest pipeline run from database: %(run_id)s"
+msgstr "Última ejecución del pipeline recuperada desde la base de datos: %(run_id)s"
+
+#: app/routes.py:230
+#, python-format
+msgid "No CLI output directories found in %(dir)s"
+msgstr "No se encontraron directorios de salida del CLI en %(dir)s"
+
+#: app/routes.py:241
+#, python-format
+msgid "Found latest CLI output directory: %(latest_dir)s"
+msgstr "Se encontró el último directorio de salida del CLI: %(latest_dir)s"
+
+#: app/routes.py:258
+msgid "Found more recent CLI results, loading into database"
+msgstr "Se encontraron resultados más recientes del CLI, cargando en la base de datos"
+
+#: app/routes.py:266
+msgid "Gene Annotation Pipeline"
+msgstr "Pipeline de anotación de genes"
+
+#: app/routes.py:269
+msgid "completed"
+msgstr "completado"
+
+#: app/routes.py:273
+msgid "Successfully loaded CLI results into database"
+msgstr "Resultados del CLI cargados exitosamente en la base de datos"
+
+#: app/routes.py:276
+#, python-format
+msgid "Failed to load CLI results: %(e)s"
+msgstr "Error al cargar resultados del CLI: %(e)s"
+
+#: app/routes.py:278
+msgid "Using more recent run pulled from database."
+msgstr "Usando ejecución más reciente obtenida de la base de datos."
+
+#: app/routes.py:294
+msgid "Congratulations, you are now a registered researcher!"
+msgstr "¡Felicidades, ahora eres un investigador registrado!"
+
+#: app/routes.py:319
+msgid "New gene annotation added!"
+msgstr "¡Nueva anotación de gen agregada!"
+
+#: app/routes.py:337
+msgid "Gene annotation updated!"
+msgstr "¡Anotación de gen actualizada!"
+
+#: app/routes.py:339
+msgid "No changes to update"
+msgstr "No hay cambios para actualizar"
+
+#: app/routes.py:396
+msgid "No Results Found"
+msgstr "No se encontraron resultados"
+
+#: app/routes.py:398
+msgid "This pipeline run was not found. Would you like to execute a new run?"
+msgstr "Esta ejecución del pipeline no fue encontrada. ¿Deseas ejecutar una nueva?"
+
+#: app/routes.py:459
+#, python-brace-format
+msgid "Researcher %{researcher_name}s not found."
+msgstr "Investigador %{researcher_name}s no encontrado."
+
+#: app/routes.py:465
+msgid "You cannot follow yourself!"
+msgstr "¡No puedes seguirte a ti mismo!"
+
+#: app/routes.py:471
+#, python-format
+msgid "You are following %(researcher_name)s!"
+msgstr "¡Ahora sigues a %(researcher_name)s!"
+
+#: app/routes.py:491
+#, python-format
+msgid "Researcher %(researcher_name)s is not found."
+msgstr "Investigador %(researcher_name)s no encontrado."
+
+#: app/routes.py:497
+msgid "You cannot unfollow yourself!"
+msgstr "¡No puedes dejar de seguirte a ti mismo!"
+
+#: app/routes.py:503
+#, python-format
+msgid "You are not following %(researcher_name)s"
+msgstr "No sigues a %(researcher_name)s"
+
+#: app/routes.py:523
+msgid "Check your email for the instructions to reset your password"
+msgstr "Revisa tu correo electrónico para las instrucciones de restablecimiento de contraseña"
+
+#: app/routes.py:541
+msgid "Your password has been reset"
+msgstr "Tu contraseña ha sido restablecida"
+
+

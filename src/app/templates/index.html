@@ -6,25 +6,28 @@
     {{ wtf.quick_form(form) }}
     {% endif %}
     {% if latest_run %}
-    <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">View Latest Results</a>
-        <p class="text-muted">Last run: {{ latest_run.formatted_timestamp }} 
-            by {{ latest_run.researcher.researcher_name }}</p>
+    <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">{{ _('View Latest Results') }}</a>
+    <p class="text-muted">
+        {{ _('Last run: %(timestamp)s by %(researcher)s',
+        timestamp=latest_run.formatted_timestamp,
+        researcher=latest_run.researcher.researcher_name) }}
+    </p>
     {% endif %}
     <div class="pipeline-controls">
         <form action="{{ url_for('run_pipeline' ) }}" method="post">
-            <button type="submit" class="btn btn-primary">Run Pipeline</button>
+            <button type="submit" class="btn btn-primary">{{ _('Run Pipeline') }}</button>
         </form>
     </div>
     <div class="dataset-tables">
-        <h2>Genes Dataset</h2>
+        <h2>{{ _('Genes Dataset') }}</h2>
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Gene Stable ID</th>
-                    <th>Gene Type</th>
-                    <th>Gene Name</th>
-                    <th>HGNC Name</th>
-                    <th>HGNC ID</th>
+                    <th>{{ _('Gene Stable ID') }}</th>
+                    <th>{{ _('Gene Type') }}</th>
+                    <th>{{ _('Gene Name') }}</th>
+                    <th>{{ _('HGNC Name') }}</th>
+                    <th>{{ _('HGNC ID') }}</th>
                 </tr>
             </thead>
             <tbody>
@@ -43,27 +46,27 @@
             <ul class="pagination">
                 <li class="page-item{% if not prev_url %} disabled{% endif %}">
                     <a class="page-link" href="{{ prev_url }}">
-                        <span aria-hidden="true">&larr;</span> Previous
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
                     </a>
                 </li>
                 <li class="page-item{% if not next_url %} disabled{% endif %}">
                     <a class="page-link" href="{{ next_url }}">
-                        Next <span aria-hidden="true">&rarr;</span>
+                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
                     </a>
                 </li>
             </ul>
         </nav>
 
-        <h2>Gene Annotations Dataset</h2>
+        <h2>{{ _('Gene Annotations Dataset') }}</h2>
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th>Gene Stable ID</th>
-                    <th>HGNC ID</th>
-                    <th>Panther ID</th>
-                    <th>Tigrfam ID</th>
-                    <th>Wikigene Name</th>
-                    <th>Description</th>
+                    <th>{{ _('Gene Stable ID') }}</th>
+                    <th>{{ _('HGNC ID') }}</th>
+                    <th>{{ _('Panther ID') }}</th>
+                    <th>{{ _('Tigrfam ID') }}</th>
+                    <th>{{ _('Wikigene Name') }}</th>
+                    <th>{{ _('Description') }}</th>
                 </tr>
             </thead>
             <body>
@@ -83,12 +86,12 @@
             <ul class="pagination">
                 <li class="page-item{% if not annotations_prev_url %} disabled{% endif %}">
                     <a class="page-link" href="{{ annotations_prev_url }}">
-                        <span aria-hidden="true">&larr;</span> Previous
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
                     </a>
                 </li>
                 <li class="page-item{% if not annotations_next_url %} disabled{% endif %}">
                     <a class="page-link" href="{{ annotations_next_url }}">
-                        Next <span aria-hidden="true">&rarr;</span>
+                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
                     </a>
                 </li>
             </ul>

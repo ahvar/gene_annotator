@@ -2,6 +2,7 @@ from threading import Thread
 
 # from flask import render_template
 from flask_mail import Message
+from flask_babel import _
 from src.app import app, mail
 
 
@@ -22,7 +23,7 @@ def send_password_reset_email(researcher):
 
     token = researcher.get_reset_password_token()
     send_email(
-        "[Gene Annotator] Reset Your Password",
+        _("[Gene Annotator] Reset Your Password"),
         sender=app.config["ADMINS"][0],
         recipients=[researcher.email],
         text_body=render_template(

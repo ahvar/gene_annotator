@@ -1,3 +1,4 @@
+from flask_babel import lazy_gettext as _l
 from flask_wtf import FlaskForm
 from wtforms import (
     StringField,
@@ -16,32 +17,32 @@ from src.app.models.gene import Gene, GeneAnnotation
 
 
 class LoginForm(FlaskForm):
-    researcher_name = StringField("Researcher Name", validators=[DataRequired()])
-    password = PasswordField("Password", validators=[DataRequired()])
-    remember_me = BooleanField("Remember Me")
-    submit = SubmitField("Sign In")
+    researcher_name = StringField(_l("Researcher Name"), validators=[DataRequired()])
+    password = PasswordField(_l("Password"), validators=[DataRequired()])
+    remember_me = BooleanField(_l("Remember Me"))
+    submit = SubmitField(_l("Sign In"))
 
 
 class GeneAnnotationForm(FlaskForm):
     """Form for manually entering gene annotations"""
 
-    gene_stable_id = StringField("Gene Stable ID", validators=[DataRequired()])
-    hgnc_id = StringField("HGNC ID")
-    panther_id = StringField("Panther ID")
-    tigrfam_id = StringField("Tigrfam ID")
-    wikigene_name = StringField("Wikigene Name")
-    gene_description = TextAreaField("Gene Description")
-    submit = SubmitField("Search")
+    gene_stable_id = StringField(_l("Gene Stable ID"), validators=[DataRequired()])
+    hgnc_id = StringField(_l("HGNC ID"))
+    panther_id = StringField(_l("Panther ID"))
+    tigrfam_id = StringField(_l("Tigrfam ID"))
+    wikigene_name = StringField(_l("Wikigene Name"))
+    gene_description = TextAreaField(_l("Gene Description"))
+    submit = SubmitField(_l("Search"))
 
 
 class RegistrationForm(FlaskForm):
-    researcher_name = StringField("Researcher name", validators=[DataRequired()])
-    email = StringField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("Password", validators=[DataRequired()])
+    researcher_name = StringField(_l("Researcher name"), validators=[DataRequired()])
+    email = StringField(_l("Email"), validators=[DataRequired(), Email()])
+    password = PasswordField(_l("Password"), validators=[DataRequired()])
     password2 = PasswordField(
-        "Repeat Password", validators=[DataRequired(), EqualTo("password")]
+        _l("Repeat Password"), validators=[DataRequired(), EqualTo("password")]
     )
-    submit = SubmitField("Register")
+    submit = SubmitField(_l("Register"))
 
     def validate_username(self, researcher_name):
         researcher = db.session.scalar(
@@ -50,20 +51,20 @@ class RegistrationForm(FlaskForm):
             )
         )
         if researcher is not None:
-            raise ValidationError("Please use a different researcher name")
+            raise ValidationError(_l("Please use a different researcher name"))
 
     def validate_email(self, email):
         researcher = db.session.scalar(
             sa.select(Researcher).where(Researcher.email == email.data)
         )
         if researcher is not None:
-            raise ValidationError("Please use a different email address")
+            raise ValidationError(_l("Please use a different email address"))
 
 
 class EditProfileForm(FlaskForm):
-    researcher_name = StringField("Researcher Name", validators=[DataRequired()])
-    about_me = TextAreaField("About Me", validators=[Length(min=0, max=140)])
-    submit = SubmitField("Submit")
+    researcher_name = StringField(_l("Researcher Name"), validators=[DataRequired()])
+    about_me = TextAreaField(_l("About Me"), validators=[Length(min=0, max=140)])
+    submit = SubmitField(_l("Submit"))
 
     def __init__(self, original_researcher_name, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -77,21 +78,21 @@ class EditProfileForm(FlaskForm):
                 )
             )
             if researcher is not None:
-                raise ValidationError("Please use a different researcher name.")
+                raise ValidationError(_l("Please use a different researcher name."))
 
 
 class ResetPasswordRequestForm(FlaskForm):
-    email = StringField("Email", validators=[DataRequired(), Email()])
-    submit = SubmitField("Request Password Reset")
+    email = StringField(_l("Email"), validators=[DataRequired(), Email()])
+    submit = SubmitField(_l("Request Password Reset"))
 
 
 class ResetPasswordForm(FlaskForm):
-    password = PasswordField("Password", validators=[DataRequired()])
+    password = PasswordField(_l("Password"), validators=[DataRequired()])
     password2 = PasswordField(
-        "Repeat Password", validators=[DataRequired(), EqualTo("password")]
+        _l("Repeat Password"), validators=[DataRequired(), EqualTo("password")]
     )
-    submit = SubmitField("Request Password Reset")
+    submit = SubmitField(_l("Request Password Reset"))
 
 
 class EmptyForm(FlaskForm):
-    submit = SubmitField("Submit")
+    submit = SubmitField(_l("Submit"))

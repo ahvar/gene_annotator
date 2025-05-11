@@ -5,24 +5,24 @@
         <tr>
             <td width="256px"><img src="{{ researcher.avatar(256) }}"></td>
             <td>
-                <h1>Researcher: {{ researcher.researcher_name }}</h1>
+                <h1>{{ _('Researcher: %(name)s', name=researcher.researcher_name) }}</h1>
                 {% if researcher.about_me %}<p>{{ researcher.about_me }}</p>{% endif %}
-                {% if researcher.last_seen %}<p>Last seen on: {{ moment(researcher.last_seen).format('LLL') }}</p>{% endif %}
-                <p>{{ researcher.followers_count() }} followers, {{ researcher.following_count() }} following.</p>
+                {% if researcher.last_seen %}<p>{{ _('Last seen on: %(when)s', when=moment(researcher.last_seen).format('LLL')) }}</p>{% endif %}
+                <p>{{ _('%(count)d followers', count=researcher.followers_count()) }}, {{ _('%(count)d following', count=researcher.following_count()) }}</p>
                 {% if researcher == current_user %}
-                <p><a href="{{ url_for('edit_profile') }}">Edit your profile</a></p>
+                <p><a href="{{ url_for('edit_profile') }}">{{ _('Edit your profile') }}</a></p>
                 {% elif not current_user.is_following(researcher) %}
                 <p>
                     <form action="{{ url_for('follow', researcher_name=researcher.researcher_name) }}" method="post">
                         {{ form.hidden_tag() }}
-                        {{ form.submit(value='Follow') }}
+                        {{ form.submit(value=_('Follow')) }}
                     </form>
                 </p>
                 {% else %}
                 <p>
                     <form action="{{ url_for('unfollow', researcher_name=researcher.researcher_name) }}" method="post">
                         {{ form.hidden_tag() }}
-                        {{ form.submit(value='Unfollow') }}
+                        {{ form.submit(value=_('Unfollow')) }}
                     </form>
                 </p>
                 {% endif %}
@@ -33,20 +33,20 @@
     
     {% if researcher == current_user %}
     <div class="followed-activity">
-        <h2>Activity from Followed Researchers</h2>
+        <h2>{{ _('Activity from Followed Researchers') }}</h2>
         {% set followed_runs = researcher.following_pipeline_runs() %}
         {% if followed_runs %}
             {% for id, name, total, pipelines in followed_runs %}
             <div class="researcher-activity">
                 <h3>{{ name }}</h3>
-                <p>Pipeline runs in last 3 months: {{ total }}</p>
+                <p>{{ _('Pipeline runs in last 3 months: %(count)d', count=total) }}</p>
                 {% if pipelines %}
-                <p>Pipelines run: {{ pipelines|join(', ') }}</p>
+                <p>{{ _('Pipelines run: %(names)s', names=pipelines|join(', ')) }}</p>
                 {% endif %}
             </div>
             {% endfor %}
         {% else %}
-            <p>No recent pipeline activity from followed researchers.</p>
+        <p>{{ _('No recent pipeline activity from followed researchers.') }}</p>
         {% endif %}
     </div>
     <hr>
@@ -61,12 +61,12 @@
         <ul class="pagination">
             <li class="page-item{% if not prev_url %} disabled{% endif %}">
                 <a class="page-link" href="{{ prev_url }}">
-                    <span aria-hidden="true">&larr;</span> Previous
+                    <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
                 </a>
             </li>
             <li class="page-item{% if not next_url %} disabled{% endif %}">
                 <a class="page-link" href="{{ next_url }}">
-                    Next <span aria-hidden="true">&rarr;</span>
+                    {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
                 </a>
             </li>
         </ul>

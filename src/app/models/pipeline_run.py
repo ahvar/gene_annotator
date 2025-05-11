@@ -33,6 +33,7 @@ class PipelineRun(db.Model):
     loaded_at: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
+    status: so.Mapped[str] = so.mapped_column(sa.String(50), default="pending")
 
     @property
     def formatted_timestamp(self):
