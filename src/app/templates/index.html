@@ -7,9 +7,11 @@
     {% endif %}
     {% if latest_run %}
     <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">{{ _('View Latest Results') }}</a>
-        <p class="text-muted">{{ _('Last run: %(timestamp)s by %(researcher)s,
-            timestamp=latest_run.formatted_timestamp,
-            researcher=latest_run.researcher.researcher_name) }}</p>
+    <p class="text-muted">
+        {{ _('Last run: %(timestamp)s by %(researcher)s',
+        timestamp=latest_run.formatted_timestamp,
+        researcher=latest_run.researcher.researcher_name) }}
+    </p>
     {% endif %}
     <div class="pipeline-controls">
         <form action="{{ url_for('run_pipeline' ) }}" method="post">

@@ -3,6 +3,7 @@ from datetime import datetime, UTC, timezone
 from pathlib import Path
 from flask import render_template, flash, redirect, url_for, request, g
 from urllib.parse import urlsplit
+from flask import g
 from flask_login import current_user, login_user, logout_user, login_required
 from flask_babel import _, get_locale
 from src.app import app, db
@@ -214,6 +215,7 @@ def get_latest_pipeline_run():
     db_run = db.session.scalar(
         sa.select(PipelineRun).order_by(PipelineRun.timestamp.desc())
     )
+
     frontend_logger.info(
         _(
             "Retrieved latest pipeline run from database: %(run_id)s",
@@ -241,13 +243,21 @@ def get_latest_pipeline_run():
         {"latest_dir": str(latest_dir)},
     )
 
+    # Parse CLI timestamp and ensure it's timezone-aware
     cli_timestamp = datetime.strptime(
         latest_dir.name.replace("output_", ""), "%m%d%yT%H%M%S"
     ).replace(tzinfo=timezone.utc)
 
-    if not db_run or cli_timestamp > db_run.timestamp:
+    if not db_run:
+        db_timestamp = None
+    else:
+        if db_run.timestamp.tzinfo is None:
+            db_timestamp = db_run.timestamp.replace(tzinfo=timezone.utc)
+        else:
+            db_timestamp = db_run.timestamp
+    if not db_timestamp or cli_timestamp > db_timestamp:
         frontend_logger.info(_("Found more recent CLI results, loading into database"))
-        results_file = latest_dir / _("results") / _("final_results") + ".csv"
+        results_file = latest_dir / "results" / "final_results.csv"
         if results_file.exists():
             try:
                 load_pipeline_results_into_db(results_file)

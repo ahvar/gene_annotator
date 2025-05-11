@@ -26,16 +26,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                    {% for gene, annotation in results %}
+                    {% for result in results %}
                         <tr>
                             <td>{{ result.gene_stable_id }}</td>
                             <td>{{ result.gene_type }}</td>
                             <td>{{ result.gene_name }}</td>
                             <td>{{ result.hgnc_id }}</td>
                             <td>{{ result.hgnc_name }}</td>
-                            <td>{{ annotation.panther_id }}</td>
-                            <td>{{ annotation.tigrfam_id }}</td>
-                            <td>{{ annotation.wikigene_name }}</td>
+                            <td>{{ result.panther_id }}</td>
+                            <td>{{ result.tigrfam_id }}</td>
+                            <td>{{ result.wikigene_name }}</td>
                         </tr>
                     {% endfor %}    
                     </tbody>
