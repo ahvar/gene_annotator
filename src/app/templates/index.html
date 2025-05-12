@@ -1,100 +1,107 @@
 {% extends "base.html" %}
 {% import "bootstrap_wtf.html" as wtf %}
 {% block content %}
-    <h1>Gene Database</h1>
-    {% if form %}
-    {{ wtf.quick_form(form) }}
-    {% endif %}
-    {% if latest_run %}
-    <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" class="btn btn-info">{{ _('View Latest Results') }}</a>
-    <p class="text-muted">
-        {{ _('Last run: %(timestamp)s by %(researcher)s',
-        timestamp=latest_run.formatted_timestamp,
-        researcher=latest_run.researcher.researcher_name) }}
-    </p>
-    {% endif %}
-    <div class="pipeline-controls">
-        <form action="{{ url_for('run_pipeline' ) }}" method="post">
-            <button type="submit" class="btn btn-primary">{{ _('Run Pipeline') }}</button>
-        </form>
-    </div>
-    <div class="dataset-tables">
-        <h2>{{ _('Genes Dataset') }}</h2>
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>{{ _('Gene Stable ID') }}</th>
-                    <th>{{ _('Gene Type') }}</th>
-                    <th>{{ _('Gene Name') }}</th>
-                    <th>{{ _('HGNC Name') }}</th>
-                    <th>{{ _('HGNC ID') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-            {% for gene in genes.items %}
-                <tr>
-                    <td>{{ gene.gene_stable_id }}</td>
-                    <td>{{ gene.gene_type }}</td>
-                    <td>{{ gene.gene_name }}</td>
-                    <td>{{ gene.hgnc_name }}</td>
-                    <td>{{ gene.hgnc_id }}</td>
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        <nav aria-label="Genes navigation">
-            <ul class="pagination">
-                <li class="page-item{% if not prev_url %} disabled{% endif %}">
-                    <a class="page-link" href="{{ prev_url }}">
-                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
-                    </a>
-                </li>
-                <li class="page-item{% if not next_url %} disabled{% endif %}">
-                    <a class="page-link" href="{{ next_url }}">
-                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+    <!-- Research Community Section -->
+    <div class="mb-5">
+        <h1>{{ _('Research Community') }}</h1>
+        
+        <!-- Post Form -->
+        {% if current_user.is_authenticated %}
+        <div class="card mb-4">
+            <div class="card-header">{{ _('Share a research update') }}</div>
+            <div class="card-body">
+                <form action="{{ url_for('index') }}" method="post">
+                    {{ post_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ post_form.post.label }}
+                        {{ post_form.post(class="form-control", rows=3) }}
+                    </div>
+                    {{ post_form.submit(class="btn btn-primary") }}
+                </form>
+            </div>
+        </div>
+        {% endif %}
 
-        <h2>{{ _('Gene Annotations Dataset') }}</h2>
-        <table class="table table-hover">
-            <thead>
-                <tr>
-                    <th>{{ _('Gene Stable ID') }}</th>
-                    <th>{{ _('HGNC ID') }}</th>
-                    <th>{{ _('Panther ID') }}</th>
-                    <th>{{ _('Tigrfam ID') }}</th>
-                    <th>{{ _('Wikigene Name') }}</th>
-                    <th>{{ _('Description') }}</th>
-                </tr>
-            </thead>
-            <body>
-            {% for annotation in annotations.items %}
-                <tr>
-                    <td>{{ annotation.gene_stable_id }}</td>
-                    <td>{{ annotation.hgnc_id }}</td>
-                    <td>{{ annotation.panther_id }}</td>
-                    <td>{{ annotation.tigrfam_id }}</td>
-                    <td>{{ annotation.wikigene_name }}</td>
-                    <td>{{ annotation.gene_description }}</td>
-                </tr>
-            {% endfor %}    
-            </body>
-        </table>
-        <nav aria-label="Annotations navigation">
-            <ul class="pagination">
-                <li class="page-item{% if not annotations_prev_url %} disabled{% endif %}">
-                    <a class="page-link" href="{{ annotations_prev_url }}">
-                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
-                    </a>
-                </li>
-                <li class="page-item{% if not annotations_next_url %} disabled{% endif %}">
-                    <a class="page-link" href="{{ annotations_next_url }}">
-                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
-                    </a>
-                </li>
-            </ul>
-        </nav>
+        <!-- Posts Feed -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">{{ _('Research Activity') }}</h5>
+            </div>
+            <div class="card-body p-0">
+                {% for post in posts.items %}
+                    {% include '_post.html' %}
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <nav aria-label="{{ _('Posts navigation') }}">
+                    <ul class="pagination mb-0 justify-content-center">
+                        <li class="page-item{% if not posts_prev_url %} disabled{% endif %}">
+                            <a class="page-link" href="{{ posts_prev_url }}">
+                                <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
+                            </a>
+                        </li>
+                        <li class="page-item{% if not posts_next_url %} disabled{% endif %}">
+                            <a class="page-link" href="{{ posts_next_url }}">
+                                {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gene Annotation Pipeline Section -->
+    <div class="mt-5">
+        <h1>{{ _('Gene Annotation Pipeline') }}</h1>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">{{ _('Pipeline Controls') }}</div>
+                    <div class="card-body">
+                        <form action="{{ url_for('run_pipeline') }}" method="post">
+                            <button type="submit" class="btn btn-primary w-100">{{ _('Run Pipeline') }}</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                {% if latest_run %}
+                <div class="card">
+                    <div class="card-header">{{ _('Latest Pipeline Run') }}</div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2 mb-3">
+                            <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" 
+                               class="btn btn-info">{{ _('View Results') }}</a>
+                        </div>
+                        <p class="text-muted">
+                            {{ _('Run: %(timestamp)s by %(researcher)s',
+                            timestamp=latest_run.formatted_timestamp,
+                            researcher=latest_run.researcher.researcher_name) }}
+                        </p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">{{ _('Explore Datasets') }}</div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-around">
+                            <a href="{{ url_for('explore_genes') }}" class="btn btn-outline-secondary">
+                                {{ _('View Genes Dataset') }}
+                            </a>
+                            <a href="{{ url_for('explore_annotations') }}" class="btn btn-outline-secondary">
+                                {{ _('View Annotations Dataset') }}
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 {% endblock %}

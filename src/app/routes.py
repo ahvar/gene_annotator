@@ -15,10 +15,11 @@ from src.app.forms import (
     EditProfileForm,
     ResetPasswordRequestForm,
     ResetPasswordForm,
+    PostForm,
 )
-from src.app.models.researcher import Researcher
+from src.app.models.researcher import Researcher, Post
 from src.app.models.gene import Gene, GeneAnnotation
-from src.app.models.pipeline_run import PipelineRun
+from src.app.models.pipeline_run import PipelineRun, PipelineResult
 from src.app.models.pipeline_run_service import (
     process_pipeline_run,
     load_pipeline_results_into_db,
@@ -36,17 +37,43 @@ frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
 @login_required
 def index():
     """Home page with pipeline controls and datasets"""
+    post_form = PostForm()
+    if post_form.validate_on_submit():
+        post = Post(body=post_form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash(_("Your post is now live!"))
+        return redirect(url_for("index"))
+
+    # Set up page and pagination for posts
+    page = request.args.get("page", 1, type=int)
+    posts = db.paginate(
+        current_user.following_posts(),
+        page=page,
+        per_page=app.config["POSTS_PER_PAGE"],
+        error_out=False,
+    )
+
+    posts_next_url = url_for("index", page=posts.next_num) if posts.has_next else None
+    posts_prev_url = url_for("index", page=posts.prev_num) if posts.has_prev else None
+
     page = request.args.get("page", 1, type=int)
 
     latest_run = get_latest_pipeline_run()
 
     genes = get_paginated_genes(page)
     annotations = get_paginated_annotations(page)
-
+    form = EmptyForm()
     return render_template(
         "index.html",
         title="Gene Database",
+        form=form,
+        post_form=post_form,
+        posts=posts,
         genes=genes,
+        latest_run=latest_run,
+        posts_next_url=posts_next_url,
+        posts_prev_url=posts_prev_url,
         annotations=annotations,
         next_url=url_for("index", page=genes.next_num) if genes.has_next else None,
         prev_url=url_for("index", page=genes.prev_num) if genes.has_prev else None,
@@ -206,7 +233,7 @@ def run_pipeline():
             return redirect(url_for("index"))
 
     except Exception as e:
-        flash(_("Pipeline error: %s", str(e)))
+        flash(_("Pipeline error: %(error)s", error=str(e)))
         return redirect(url_for("index"))
 
 
@@ -274,7 +301,7 @@ def get_latest_pipeline_run():
                 frontend_logger.info(_("Successfully loaded CLI results into database"))
                 return run
             except Exception as e:
-                frontend_logger.error(_("Failed to load CLI results: %(e)s", str(e)))
+                frontend_logger.error(_("Failed to load CLI results: %(e)s", e=str(e)))
     else:
         frontend_logger.info(_("Using more recent run pulled from database."))
     return db_run
@@ -350,6 +377,28 @@ def researcher(researcher_name):
         sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
     )
     page = request.args.get("page", 1, type=int)
+    posts_query = researcher.posts.select().order_by(Post.timestamp.desc())
+    posts = db.paginate(
+        posts_query, page=page, per_page=app.config["POSTS_PER_PAGE"], error_out=False
+    )
+    posts_next_url = (
+        url_for(
+            "researcher",
+            researcher_name=researcher.researcher_name,
+            page=posts.next_num,
+        )
+        if posts.has_next
+        else None
+    )
+    posts_prev_url = (
+        url_for(
+            "researcher",
+            researcher_name=researcher.researcher_name,
+            page=posts.prev_num,
+        )
+        if posts.has_prev
+        else None
+    )
     runs_query = (
         sa.select(PipelineRun)
         .where(PipelineRun.researcher_id == researcher.id)
@@ -380,6 +429,9 @@ def researcher(researcher_name):
     return render_template(
         "researcher.html",
         researcher=researcher,
+        posts=posts.items,
+        posts_next_url=posts_next_url,
+        posts_prev_url=posts_prev_url,
         runs=runs.items,
         next_url=next_url,
         prev_url=prev_url,
@@ -402,23 +454,15 @@ def pipeline_run_results(run_id):
         )
 
     page = request.args.get("page", 1, type=int)
-    query = (
-        sa.select(Gene, GeneAnnotation)
-        .join(
-            GeneAnnotation,
-            sa.and_(
-                Gene.gene_stable_id == GeneAnnotation.gene_stable_id,
-                Gene.hgnc_id == GeneAnnotation.hgnc_id,
-            ),
-        )
-        .where(Gene.created_at >= run.timestamp)
-        .where(Gene.created_at <= run.loaded_at)
-        .where(GeneAnnotation.tigrfam_id.isnot(None))
-        .where(~GeneAnnotation.tigrfam_id.in_(excluded_tigrfam_vals))
-        .order_by(Gene.gene_stable_id)
-    )
+
+    # Query PipelineResult directly
     results = db.paginate(
-        query, page=page, per_page=app.config["GENES_PER_PAGE"], error_out=False
+        sa.select(PipelineResult)
+        .where(PipelineResult.run_id == run_id)
+        .order_by(PipelineResult.gene_stable_id),
+        page=page,
+        per_page=app.config["GENES_PER_PAGE"],
+        error_out=False,
     )
 
     return render_template(
