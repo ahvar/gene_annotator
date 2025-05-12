@@ -17,4 +17,5 @@ class Config:
     ADMINS = ["arthurvargasdev@gmail.com"]
     RUNS_PER_PAGE = 10
     GENES_PER_PAGE = 50
+    POSTS_PER_PAGE = 10
     LANGUAGES = ["en", "es"]

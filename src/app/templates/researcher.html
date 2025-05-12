@@ -31,6 +31,31 @@
     
     </table>
     
+    <!-- Add Posts section here -->
+    <div class="posts-feed mb-4">
+        <h2>{{ _('Posts by %(name)s', name=researcher.researcher_name) }}</h2>
+        {% for post in posts %}
+            {% include '_post.html' %}
+        {% endfor %}
+        
+        {% if posts_next_url or posts_prev_url %}
+        <nav aria-label="{{ _('Posts navigation') }}">
+            <ul class="pagination">
+                <li class="page-item{% if not posts_prev_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ posts_prev_url }}">
+                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
+                    </a>
+                </li>
+                <li class="page-item{% if not posts_next_url %} disabled{% endif %}">
+                    <a class="page-link" href="{{ posts_next_url }}">
+                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+    
     {% if researcher == current_user %}
     <div class="followed-activity">
         <h2>{{ _('Activity from Followed Researchers') }}</h2>

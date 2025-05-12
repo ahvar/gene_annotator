@@ -10,6 +10,7 @@ from pathlib import Path
 from datetime import datetime, time, UTC
 import pandas as pd
 from glob import glob
+from flask_babel import _
 from src.utils.logging_utils import LoggingUtils, LogFileCreationError
 from src.utils.pipeline_exceptions import GeneAnnotationException, GeneDataException
 from src.utils.references import (

@@ -34,6 +34,9 @@ class PipelineRun(db.Model):
         default=lambda: datetime.now(timezone.utc)
     )
     status: so.Mapped[str] = so.mapped_column(sa.String(50), default="pending")
+    results: so.Mapped[list["PipelineResult"]] = so.relationship(
+        "PipelineResult", back_populates="run", cascade="all, delete-orphan"
+    )
 
     @property
     def formatted_timestamp(self):
@@ -41,3 +44,28 @@ class PipelineRun(db.Model):
 
     def __repr__(self):
         return f"<PipelineRun {self.timestamp} {self.output_dir}>"
+
+
+class PipelineResult(db.Model):
+    """Model representing results from a pipeline run"""
+
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    run_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey("pipeline_run.id"),
+        name="fk_pipeline_result_run_id",
+        nullable=False,
+    )
+    gene_stable_id: so.Mapped[str] = so.mapped_column(sa.String(128))
+    gene_type: so.Mapped[str] = so.mapped_column(sa.String(64))
+    gene_name: so.Mapped[str] = so.mapped_column(sa.String(128))
+    hgnc_name: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
+    hgnc_id: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
+    panther_id: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
+    tigrfam_id: so.Mapped[Optional[str]] = so.mapped_column(sa.String(128))
+    wikigene_name: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
+    gene_description: so.Mapped[Optional[str]] = so.mapped_column(sa.String(1024))
+    pid_suffix: so.Mapped[Optional[str]] = so.mapped_column(sa.String(64))
+
+    run: so.Mapped["PipelineRun"] = so.relationship(
+        "PipelineRun", back_populates="results"
+    )

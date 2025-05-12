@@ -44,6 +44,10 @@ msgstr "Iniciar sesión"
 msgid "Gene Stable ID"
 msgstr "ID estable del gen"
 
+#: app/templates/index.html:4
+msgid "Gene Database"
+msgstr "Base de datos genética"
+
 #: app/forms.py:30 app/templates/explore_annotations.html:10
 #: app/templates/explore_genes.html:13 app/templates/index.html:30
 #: app/templates/index.html:65 app/templates/pipeline_results.html:21

@@ -41,6 +41,7 @@ class Researcher(UserMixin, db.Model):
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
+    posts: so.WriteOnlyMapped["Post"] = so.relationship(back_populates="author")
 
     runs: so.Mapped[list["PipelineRun"]] = so.relationship(
         "PipelineRun", back_populates="researcher"
@@ -147,6 +148,40 @@ class Researcher(UserMixin, db.Model):
             pipeline_names = pipeline_names.split(",") if pipeline_names else []
             results.append((researcher_id, researcher_name, total_runs, pipeline_names))
         return results
+
+    def following_posts(self):
+        Author = so.aliased(Researcher)
+        Follower = so.aliased(Researcher)
+        return (
+            sa.select(Post)
+            .join(Post.author.of_type(Author))
+            .join(Author.followers.of_type(Follower), isouter=True)
+            .where(
+                sa.or_(
+                    Follower.id == self.id,
+                    Author.id == self.id,
+                )
+            )
+            .group_by(Post)
+            .order_by(Post.timestamp.desc())
+        )
+
+
+class Post(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    body: so.Mapped[str] = so.mapped_column(sa.String(140))
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc)
+    )
+    researcher_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
+
+    author: so.Mapped[Researcher] = so.relationship(back_populates="posts")
+
+    def __repr__(self):
+        return "<Post {}>".format(self.body)
 
 
 @login.user_loader
