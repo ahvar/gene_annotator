@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en">
-
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -16,7 +15,7 @@
         crossorigin="anonymous">
     </head>
     <body>
-      <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <nav class="navbar navbar-expand-lg navbar-light bg-info bg-opacity-25 shadow-sm">
         <div class="container">
             <a class="navbar-brand" href="{{ url_for('index') }}">{{ _('Gene Annotator') }}</a>
             <button class="navbar-toggler" type="button" 
@@ -31,6 +30,9 @@
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="{{ url_for('index') }}">{{ _('Home') }}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" aria-current="page" href="{{ url_for('microblog') }}">{{ _('Research Community') }}</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" aria-current="page" href="{{ url_for('explore_genes') }}">{{ _('Genes') }}</a>

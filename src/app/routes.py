@@ -217,6 +217,93 @@ def explore_annotations():
     )
 
 
+@app.route("/find_more_researchers")
+@login_required
+def find_more_researchers():
+    """Page for finding more researchers to follow"""
+    page = request.args.get("page", 1, type=int)
+    researchers = db.paginate(
+        sa.select(Researcher).order_by(Researcher.researcher_name),
+        page=page,
+        per_page=app.config.get("RESEARCHERS_PER_PAGE", 10),
+        error_out=False,
+    )
+
+    form = EmptyForm()  # For follow/unfollow actions
+
+    return render_template(
+        "find_more_researchers.html",
+        title=_("Find More Researchers"),
+        researchers=researchers.items,
+        next_url=(
+            url_for("find_more_researchers", page=researchers.next_num)
+            if researchers.has_next
+            else None
+        ),
+        prev_url=(
+            url_for("find_more_researchers", page=researchers.prev_num)
+            if researchers.has_prev
+            else None
+        ),
+        form=form,
+    )
+
+
+@app.route("/microblog", methods=["GET", "POST"])
+@login_required
+def microblog():
+    """Research community microblog page where researchers can post and see activity"""
+    post_form = PostForm()
+    if post_form.validate_on_submit():
+        post = Post(body=post_form.post.data, author=current_user)
+        db.session.add(post)
+        db.session.commit()
+        flash(_("Your post is now live!"))
+        return redirect(url_for("microblog"))
+
+    # Set up page and pagination for posts
+    page = request.args.get("page", 1, type=int)
+    posts = db.paginate(
+        current_user.following_posts(),
+        page=page,
+        per_page=app.config["POSTS_PER_PAGE"],
+        error_out=False,
+    )
+
+    posts_next_url = (
+        url_for("microblog", page=posts.next_num) if posts.has_next else None
+    )
+    posts_prev_url = (
+        url_for("microblog", page=posts.prev_num) if posts.has_prev else None
+    )
+
+    # Get list of researchers to suggest following
+    researchers_to_follow = (
+        db.session.execute(
+            sa.select(Researcher)
+            .where(Researcher.id != current_user.id)
+            .where(~Researcher.followers.of_type(Researcher).contains(current_user))
+            .order_by(sa.func.random())
+            .limit(5)
+        )
+        .scalars()
+        .all()
+    )
+
+    form = EmptyForm()  # For follow/unfollow actions
+
+    return render_template(
+        "microblog.html",
+        title=_("Research Community"),
+        post_form=post_form,
+        posts=posts.items,
+        posts_next_url=posts_next_url,
+        posts_prev_url=posts_prev_url,
+        researchers_to_follow=researchers_to_follow,
+        form=form,
+    )
+
+
 @app.route("/run_pipeline", methods=["POST"])
 @login_required
 def run_pipeline():

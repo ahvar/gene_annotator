@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <!-- Main content - posts and form -->
+            <div class="col-md-8">
+                <h1>{{ _('Research Community') }}</h1>
+                
+                <!-- Post Form -->
+                {% if current_user.is_authenticated %}
+                <div class="card mb-4">
+                    <div class="card-header">{{ _('Share a research update') }}</div>
+                    <div class="card-body">
+                        <form action="{{ url_for('microblog') }}" method="post">
+                            {{ post_form.hidden_tag() }}
+                            <div class="mb-3">
+                                {{ post_form.post.label }}
+                                {{ post_form.post(class="form-control", rows=3) }}
+                            </div>
+                            {{ post_form.submit(class="btn btn-primary") }}
+                        </form>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Posts Feed -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">{{ _('Research Activity') }}</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        {% for post in posts %}
+                            {% include '_post.html' %}
+                        {% endfor %}
+                    </div>
+                    <div class="card-footer">
+                        <nav aria-label="{{ _('Posts navigation') }}">
+                            <ul class="pagination mb-0 justify-content-center">
+                                <li class="page-item{% if not posts_prev_url %} disabled{% endif %}">
+                                    <a class="page-link" href="{{ posts_prev_url }}">
+                                        <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
+                                    </a>
+                                </li>
+                                <li class="page-item{% if not posts_next_url %} disabled{% endif %}">
+                                    <a class="page-link" href="{{ posts_next_url }}">
+                                        {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar - Researchers to follow -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ _('Researchers to Follow') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if researchers_to_follow %}
+                            {% for researcher in researchers_to_follow %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <img src="{{ researcher.avatar(50) }}" class="me-3 rounded-circle">
+                                    <div>
+                                        <a href="{{ url_for('researcher', researcher_name=researcher.researcher_name) }}">
+                                            {{ researcher.researcher_name }}
+                                        </a>
+                                        <form action="{{ url_for('follow', researcher_name=researcher.researcher_name) }}" method="post" class="mt-1">
+                                            {{ form.hidden_tag() }}
+                                            <button type="submit" class="btn btn-sm btn-outline-primary">
+                                                {{ _('Follow') }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted">{{ _('No new researchers to follow right now.') }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        <a href="{{ url_for('find_more_researchers') }}" class="btn btn-outline-secondary w-100">
+                            {{ _('Find More Researchers') }}
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Statistics Card -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">{{ _('Your Network') }}</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>{{ _('Following') }}</span>
+                            <span class="badge bg-primary">{{ current_user.following_count() }}</span>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <span>{{ _('Followers') }}</span>
+                            <span class="badge bg-secondary">{{ current_user.followers_count() }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
