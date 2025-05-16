@@ -1,56 +1,6 @@
 {% extends "base.html" %}
 {% import "bootstrap_wtf.html" as wtf %}
 {% block content %}
-    <!-- Research Community Section -->
-    <div class="mb-5">
-        <h1>{{ _('Research Community') }}</h1>
-        
-        <!-- Post Form -->
-        {% if current_user.is_authenticated %}
-        <div class="card mb-4">
-            <div class="card-header">{{ _('Share a research update') }}</div>
-            <div class="card-body">
-                <form action="{{ url_for('index') }}" method="post">
-                    {{ post_form.hidden_tag() }}
-                    <div class="mb-3">
-                        {{ post_form.post.label }}
-                        {{ post_form.post(class="form-control", rows=3) }}
-                    </div>
-                    {{ post_form.submit(class="btn btn-primary") }}
-                </form>
-            </div>
-        </div>
-        {% endif %}
-
-        <!-- Posts Feed -->
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title mb-0">{{ _('Research Activity') }}</h5>
-            </div>
-            <div class="card-body p-0">
-                {% for post in posts.items %}
-                    {% include '_post.html' %}
-                {% endfor %}
-            </div>
-            <div class="card-footer">
-                <nav aria-label="{{ _('Posts navigation') }}">
-                    <ul class="pagination mb-0 justify-content-center">
-                        <li class="page-item{% if not posts_prev_url %} disabled{% endif %}">
-                            <a class="page-link" href="{{ posts_prev_url }}">
-                                <span aria-hidden="true">&larr;</span> {{ _('Previous') }}
-                            </a>
-                        </li>
-                        <li class="page-item{% if not posts_next_url %} disabled{% endif %}">
-                            <a class="page-link" href="{{ posts_next_url }}">
-                                {{ _('Next') }} <span aria-hidden="true">&rarr;</span>
-                            </a>
-                        </li>
-                    </ul>
-                </nav>
-            </div>
-        </div>
-    </div>
-    
     <!-- Gene Annotation Pipeline Section -->
     <div class="mt-5">
         <h1>{{ _('Gene Annotation Pipeline') }}</h1>
