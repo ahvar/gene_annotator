@@ -2,6 +2,22 @@
 
 {% block content %}
     <h1>{{ _(title) }}</h1>
+    <!-- Gene Annotation Information -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ _('About Gene Annotations') }}</h5>
+            <p>{{ _('This dataset contains additional functional annotations for genes from multiple databases.') }}</p>
+            <ul>
+                <li><strong>{{ _('Gene Stable ID') }}</strong>: {{ _('Ensembl identifiers linking to the main gene database.') }}</li>
+                <li><strong>{{ _('HGNC ID') }}</strong>: {{ _('HUGO Gene Nomenclature Committee identifier for official human gene names.') }}</li>
+                <li><strong>{{ _('Panther ID') }}</strong>: {{ _('Protein ANalysis THrough Evolutionary Relationships classification system ID.') }}</li>
+                <li><strong>{{ _('Tigrfam ID') }}</strong>: {{ _('TIGRFAMs are protein families based on Hidden Markov Models (HMMs).') }}</li>
+                <li><strong>{{ _('Wikigene Name') }}</strong>: {{ _('Gene name from the Wikigene collaborative database.') }}</li>
+                <li><strong>{{ _('Gene Description') }}</strong>: {{ _('Functional description of the gene from source databases.') }}</li>
+            </ul>
+            <p class="text-muted small">{{ _('Note: These annotations are aggregated from multiple sources and provide functional context to genes. The identifiers help connect genes across different biological databases and classification systems.') }}</p>
+        </div>
+    </div>
     <div class="dataset-table">
         <table class="table table-hover table-striped align-middle mb-0">
             <thead class="table-light">

@@ -2,6 +2,21 @@
 
 {% block content %}
     <h1>{{ title }}</h1>
+    <!-- Gene Dataset Information -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">{{ _('About Gene Data') }}</h5>
+            <p>{{ _('This dataset contains gene information from various sources.') }}</p>
+            <ul>
+                <li><strong>{{ _('Gene Stable ID') }}</strong>: {{ _('Ensembl identifiers (e.g., ENSG00000198888) that remain stable for a particular gene across Ensembl database releases.') }}</li>
+                <li><strong>{{ _('Gene Type') }}</strong>: {{ _('Classification of the gene (e.g., protein_coding, pseudogene, ncRNA).') }}</li>
+                <li><strong>{{ _('Gene Name') }}</strong>: {{ _('Common name used to identify the gene.') }}</li>
+                <li><strong>{{ _('HGNC Name') }}</strong>: {{ _('Official gene symbol approved by the HUGO Gene Nomenclature Committee.') }}</li>
+                <li><strong>{{ _('HGNC ID') }}</strong>: {{ _('HUGO Gene Nomenclature Committee ID (e.g., HGNC:7455) that corresponds to an official gene name in humans.') }}</li>
+            </ul>
+            <p class="text-muted small">{{ _('Note: In most human gene annotation scenarios, a single Ensembl gene typically maps to exactly one HGNC ID. There are exceptions, especially with alternative or deprecated IDs, or when genes are split/merged between Ensembl releases.') }}</p>
+        </div>
+    </div>
     <div class="dataset-table">
         <table class="table table-hover table-striped align-middle mb-0">
             <thead class="table-light">
