@@ -4,6 +4,23 @@
     <!-- Gene Annotation Pipeline Section -->
     <div class="mt-5">
         <h1>{{ _('Gene Annotation Pipeline') }}</h1>
+        <!-- Pipeline Description -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <p class="lead">{{ _('ETL pipeline and API for duplicate and unique record identification.') }}</p>
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item">{{ _('Reads data from genes.csv and gene_annotations.tsv') }}</li>
+                            <li class="list-group-item">{{ _('Identifies and removes duplicate records') }}</li>
+                            <li class="list-group-item">{{ _('Merges gene data with gene annotations') }}</li>
+                            <li class="list-group-item">{{ _('Performs data cleaning and validation') }}</li>
+                            <li class="list-group-item">{{ _('Outputs the final merged data to final_results.csv') }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-6">
                 <div class="card">
@@ -33,24 +50,6 @@
                     </div>
                 </div>
                 {% endif %}
-            </div>
-        </div>
-        
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-header">{{ _('Explore Datasets') }}</div>
-                    <div class="card-body">
-                        <div class="d-flex justify-content-around">
-                            <a href="{{ url_for('explore_genes') }}" class="btn btn-outline-secondary">
-                                {{ _('View Genes Dataset') }}
-                            </a>
-                            <a href="{{ url_for('explore_annotations') }}" class="btn btn-outline-secondary">
-                                {{ _('View Annotations Dataset') }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
             </div>
         </div>
     </div>

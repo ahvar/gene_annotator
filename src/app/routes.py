@@ -6,6 +6,7 @@ from urllib.parse import urlsplit
 from flask import g
 from flask_login import current_user, login_user, logout_user, login_required
 from flask_babel import _, get_locale
+from langdetect import detect, LangDetectException
 from src.app import app, db
 from src.app.forms import (
     GeneAnnotationForm,
@@ -25,6 +26,7 @@ from src.app.models.pipeline_run_service import (
     load_pipeline_results_into_db,
 )
 from src.app.email_service import send_password_reset_email
+from src.app.translate import translate
 from src.utils.references import excluded_tigrfam_vals, GENE_ANNOTATOR_FRONTEND
 from src.utils.pipeline_utils import validate_outputdir
 import sqlalchemy as sa
@@ -39,7 +41,11 @@ def index():
     """Home page with pipeline controls and datasets"""
     post_form = PostForm()
     if post_form.validate_on_submit():
-        post = Post(body=post_form.post.data, author=current_user)
+        try:
+            language = detect(form.post.data)
+        except LangDetectException:
+            language = ""
+        post = Post(body=post_form.post.data, author=current_user, language=language)
         db.session.add(post)
         db.session.commit()
         flash(_("Your post is now live!"))
@@ -612,6 +618,22 @@ def follow(researcher_name):
 @app.route("/unfollow/<researcher_name>", methods=["POST"])
 @login_required
 def unfollow(researcher_name):
+    """Unfollow a researcher.
+
+    Removes the current user from the followers list of the specified researcher.
+    Requires authentication and form validation to prevent CSRF attacks.
+
+    Args:
+        researcher_name (str): Username of the researcher to unfollow
+
+    Returns:
+        A redirect to either:
+        - The researcher's profile page on success
+        - The index page if form validation fails
+
+    Raises:
+        404: Implicitly if researcher is not found (handled by redirect)
+    """
     form = EmptyForm()
     if form.validate_on_submit():
         researcher = db.session.scalar(
@@ -641,8 +663,50 @@ def unfollow(researcher_name):
         return redirect(url_for("index"))
 
 
+@app.route("/translate", methods=["POST"])
+@login_required
+def translate_next():
+    """Translate text between languages.
+
+    API endpoint that accepts JSON with source text, source language, and
+    destination language. Uses the Azure Translator service to perform translation.
+
+    Request body should be JSON with structure:
+    {
+        "text": "Text to translate",
+        "source_language": "en",
+        "dest_language": "es"
+    }
+
+    Returns:
+        JSON response with the translated text:
+        {
+            "text": "Translated text here"
+        }
+
+    Requires authentication to prevent abuse of translation API quota.
+    """
+    data = request.get_json()
+    return {
+        "text": translate(data["text"], data["source_language"], data["dest_language"])
+    }
+
+
 @app.route("/reset_password_request", methods=["GET", "POST"])
 def reset_password_request():
+    """Request a password reset.
+
+    Displays a form to enter email address for password reset.
+    Sends a password reset email with a time-limited token if the email
+    is associated with a researcher account.
+
+    For security reasons, shows the same success message whether the
+    email exists or not to prevent user enumeration.
+
+    Returns:
+        GET: Rendered password reset request form
+        POST: Redirect to login page after form submission
+    """
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     form = ResetPasswordRequestForm()
@@ -661,6 +725,19 @@ def reset_password_request():
 
 @app.route("/reset_password/<token>", methods=["GET", "POST"])
 def reset_password(token):
+    """Reset password using a valid token.
+
+    Validates the password reset token and allows setting a new password
+    if the token is valid and not expired.
+
+    Args:
+        token (str): Password reset token from the email link
+
+    Returns:
+        GET: Rendered password reset form if token is valid
+        POST: Redirect to login page after successful password change
+        If token is invalid: Redirect to index page
+    """
     if current_user.is_authenticated:
         return redirect(url_for("index"))
     researcher = Researcher.verify_reset_password(token)
