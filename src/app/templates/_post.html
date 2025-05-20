@@ -14,7 +14,9 @@
             {{ _('%(researcher_name)s said %(when)s',
                 researcher_name=researcher_link, when=moment(post.timestamp).fromNow()) }}
             <br>
-            {{ post.body }}
+            <span id="post{{ post.id }}">
+                {{ post.body }}
+            </span>
             {% if post.language and post.language != g.locale %}
             <br><br>
             <span id="translation{{ post.id }}">
@@ -24,7 +26,7 @@
                     '{{ post.language }}',
                     '{{ g.locale }}');">{{ _('Translate') }}</a>
             </span>
-            {% endif $}
+            {% endif %}
         </td>
     </tr>
 </table>
