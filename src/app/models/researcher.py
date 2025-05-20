@@ -169,6 +169,7 @@ class Researcher(UserMixin, db.Model):
 
 class Post(db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
     body: so.Mapped[str] = so.mapped_column(sa.String(140))
     timestamp: so.Mapped[datetime] = so.mapped_column(
         index=True, default=lambda: datetime.now(timezone.utc)
