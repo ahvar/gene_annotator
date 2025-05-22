@@ -26,8 +26,15 @@ login.login_view = "login"
 mail = Mail(app)
 moment = Moment(app)
 babel = Babel(app, locale_selector=get_locale)
+from src.app.errors import bp as errors_bp
+from src.app.auth import bp as auth_bp
+from src.app.main import bp as main_bp
 
+app.register_blueprint(errors_bp)
+app.register_blueprint(auth_bp, url_prefix="/auth")
+app.register_blueprint(main_bp)
 from src.utils.pipeline_utils import init_frontend_logger
+
 
 app_logger = None
 
@@ -51,5 +58,5 @@ if not app.debug:
         app.logger.addHandler(mail_handler)
     app_logger = init_frontend_logger(logging.INFO)
 
-from src.app import routes, errors
+from src.app import routes
 from src.app.models import researcher, gene, pipeline_run_service, pipeline_run
