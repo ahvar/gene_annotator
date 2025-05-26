@@ -27,14 +27,36 @@ followers = sa.Table(
 
 
 class Researcher(UserMixin, db.Model):
+    """A researcher user model for the gene annotation system.
+
+    This class represents users of the gene annotation platform with authentication,
+    social relationships, and research activity tracking capabilities. It implements
+    a follower/following relationship system and tracks user pipeline runs and posts.
+
+    Attributes:
+        id (int): Primary key identifier for the researcher
+        researcher_name (str): Unique username for the researcher
+        email (str): Unique email address for the researcher
+        password_hash (str): Securely hashed password (never stored in plaintext)
+        about_me (str): Optional biography or profile information
+        last_seen (datetime): Timestamp of the user's most recent activity
+        posts (relationship): Collection of posts created by this researcher
+        runs (relationship): Collection of pipeline runs initiated by this researcher
+        following (relationship): Other researchers this user follows
+        followers (relationship): Other researchers who follow this user
+
+    Relationships:
+        - One-to-many with Post (as author)
+        - One-to-many with PipelineRun (as researcher)
+        - Many-to-many with Researcher (self-referential for following/followers)
+    """
+
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
     researcher_name: so.Mapped[str] = so.mapped_column(
         sa.String(64), index=True, unique=True
     )
     email: so.Mapped[str] = so.mapped_column(sa.String(120), index=True, unique=True)
     password_hash: so.Mapped[Optional[str]] = so.mapped_column(sa.String(256))
-
-    # gene table
 
     about_me: so.Mapped[Optional[str]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
@@ -92,7 +114,7 @@ class Researcher(UserMixin, db.Model):
     def check_password(self, password: str) -> bool:
         return check_password_hash(self.password_hash, password)
 
-    def get_reset_password(self, expires_in=600):
+    def get_reset_password_token(self, expires_in=600):
         return jwt.encode(
             {"reset_password": self.id, "exp": time() + expires_in},
             current_app.config["SECRET_KEY"],
@@ -100,7 +122,7 @@ class Researcher(UserMixin, db.Model):
         )
 
     @staticmethod
-    def verify_reset_password(token):
+    def verify_reset_password_token(token):
         try:
             id = jwt.decode(
                 token, current_app.config["SECRET_KEY"], algorithms=["HS256"]

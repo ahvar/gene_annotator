@@ -122,7 +122,7 @@ def reset_password(token):
     """
     if current_user.is_authenticated:
         return redirect(url_for("main.index"))
-    researcher = Researcher.verify_reset_password(token)
+    researcher = Researcher.verify_reset_password_token(token)
     if not researcher:
         return redirect(url_for("main.index"))
     form = ResetPasswordForm()
