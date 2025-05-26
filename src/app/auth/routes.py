@@ -3,7 +3,7 @@ from flask import render_template, redirect, url_for, flash, request
 from urllib.parse import urlsplit
 from flask_login import login_user, logout_user, current_user
 from flask_babel import _
-from sqlalchemy import sa
+import sqlalchemy as sa
 from src.app import db
 from src.app.auth import bp
 from src.app.auth.forms import (
