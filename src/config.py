@@ -1,7 +1,10 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 basedir = Path(__file__).resolve().parent.parent
+envfile = basedir / ".env"
+load_dotenv(str(envfile))
 
 
 class Config:

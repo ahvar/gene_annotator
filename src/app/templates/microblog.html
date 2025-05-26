@@ -12,7 +12,7 @@
                 <div class="card mb-4">
                     <div class="card-header">{{ _('Share a research update') }}</div>
                     <div class="card-body">
-                        <form action="{{ url_for('microblog') }}" method="post">
+                        <form action="{{ url_for('main.microblog') }}" method="post">
                             {{ post_form.hidden_tag() }}
                             <div class="mb-3">
                                 {{ post_form.post.label }}
@@ -65,10 +65,10 @@
                                 <div class="d-flex align-items-center mb-3">
                                     <img src="{{ researcher.avatar(50) }}" class="me-3 rounded-circle">
                                     <div>
-                                        <a href="{{ url_for('researcher', researcher_name=researcher.researcher_name) }}">
+                                        <a href="{{ url_for('main.researcher', researcher_name=researcher.researcher_name) }}">
                                             {{ researcher.researcher_name }}
                                         </a>
-                                        <form action="{{ url_for('follow', researcher_name=researcher.researcher_name) }}" method="post" class="mt-1">
+                                        <form action="{{ url_for('main.follow', researcher_name=researcher.researcher_name) }}" method="post" class="mt-1">
                                             {{ form.hidden_tag() }}
                                             <button type="submit" class="btn btn-sm btn-outline-primary">
                                                 {{ _('Follow') }}
@@ -82,7 +82,7 @@
                         {% endif %}
                     </div>
                     <div class="card-footer">
-                        <a href="{{ url_for('find_more_researchers') }}" class="btn btn-outline-secondary w-100">
+                        <a href="{{ url_for('main.find_more_researchers') }}" class="btn btn-outline-secondary w-100">
                             {{ _('Find More Researchers') }}
                         </a>
                     </div>

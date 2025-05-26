@@ -26,7 +26,7 @@
                 <div class="card">
                     <div class="card-header">{{ _('Pipeline Controls') }}</div>
                     <div class="card-body">
-                        <form action="{{ url_for('run_pipeline') }}" method="post">
+                        <form action="{{ url_for('main.run_pipeline') }}" method="post">
                             <button type="submit" class="btn btn-primary w-100">{{ _('Run Pipeline') }}</button>
                         </form>
                     </div>
@@ -39,7 +39,7 @@
                     <div class="card-header">{{ _('Latest Pipeline Run') }}</div>
                     <div class="card-body">
                         <div class="d-grid gap-2 mb-3">
-                            <a href="{{ url_for('pipeline_run_results', run_id=latest_run.id) }}" 
+                            <a href="{{ url_for('main.pipeline_run_results', run_id=latest_run.id) }}" 
                                class="btn btn-info">{{ _('View Results') }}</a>
                         </div>
                         <p class="text-muted">
