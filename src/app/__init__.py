@@ -8,7 +8,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel
-
+from elasticsearch import Elasticsearch
 from src.config import Config
 
 from src.utils.pipeline_utils import init_frontend_logger
@@ -49,6 +49,11 @@ def create_app(config_class=Config):
 
     app.register_blueprint(cli_bp)
 
+    app.elasticsearch = (
+        Elasticsearch([app.config["ELASTICSEARCH_URL"]])
+        if app.config["ELASTICSEARCH_URL"]
+        else None
+    )
     if not app.debug and not app.testing:
         if app.config["MAIL_SERVER"]:
             auth = None

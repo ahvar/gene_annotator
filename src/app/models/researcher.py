@@ -203,6 +203,7 @@ class Post(db.Model):
     language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
 
     author: so.Mapped[Researcher] = so.relationship(back_populates="posts")
+    __searchable__ = ["body"]
 
     def __repr__(self):
         return "<Post {}>".format(self.body)
