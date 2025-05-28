@@ -7,7 +7,13 @@ from flask_babel import _, get_locale
 import sqlalchemy as sa
 from langdetect import detect, LangDetectException
 from src.app import db
-from src.app.main.forms import EditProfileForm, EmptyForm, PostForm, GeneAnnotationForm
+from src.app.main.forms import (
+    EditProfileForm,
+    EmptyForm,
+    PostForm,
+    GeneAnnotationForm,
+    SearchForm,
+)
 from src.app.models.researcher import Researcher, Post
 from src.app.models.gene import Gene, GeneAnnotation
 from src.app.models.pipeline_run import PipelineRun, PipelineResult
@@ -225,6 +231,15 @@ def before_request():
     if current_user.is_authenticated:
         current_user.last_seen = datetime.now(timezone.utc)
         db.session.commit()
+    g.locale = str(get_locale())
+
+
+@bp.before_app_request
+def before_request():
+    if current_user.is_authenticated:
+        current_user.last_seen = datetime.now(timezone.utc)
+        db.session.commit()
+        g.search_form = SearchForm()
     g.locale = str(get_locale())
 
 
@@ -480,6 +495,32 @@ def explore_annotations():
 @bp.route("/researcher/<researcher_name>")
 @login_required
 def researcher(researcher_name):
+    """Display a researcher's profile page with posts and pipeline runs.
+
+    This route shows detailed information about a specific researcher, including
+    their profile information, posts they've written, and pipeline runs they've
+    executed. The page includes pagination controls for both posts and runs.
+    If the current user is not the profile owner, follow/unfollow controls are
+    displayed.
+
+    URL Parameters:
+        researcher_name (str): Username of the researcher to display
+        page (int, optional): The page number to display for posts and runs (defaults to 1)
+
+    Returns:
+        Rendered HTML template with:
+        - Researcher profile information (avatar, name, bio, statistics)
+        - Paginated list of the researcher's posts
+        - Paginated list of the researcher's pipeline runs
+        - Follow/unfollow form if viewing another researcher's profile
+        - Pagination controls for both posts and runs
+
+    Raises:
+        404: If the researcher is not found (handled by db.first_or_404)
+
+    Requires authentication via @login_required decorator.
+    """
+
     researcher = db.first_or_404(
         sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
     )
@@ -692,3 +733,31 @@ def translate_next():
     return {
         "text": translate(data["text"], data["source_language"], data["dest_language"])
     }
+
+
+@bp.route("/search")
+@login_required
+def search():
+    if not g.search_form.validate():
+        return redirect(url_for("main.index"))
+    page = request.args.get("page", 1, type=int)
+    posts, total = Post.search(
+        g.search_form.q.data, page, current_app.config["POSTS_PER_PAGE"]
+    )
+    next_url = (
+        url_for("main.search", q=g.search_form.q.data, page=page + 1)
+        if total > page * current_app.config["POSTS_PER_PAGE"]
+        else None
+    )
+    prev_url = (
+        url_for("main.search", q=g.search_form.q.data, page=page - 1)
+        if page > 1
+        else None
+    )
+    return render_template(
+        "search.html",
+        title=_("Search"),
+        posts=posts,
+        next_url=next_url,
+        prev_url=prev_url,
+    )

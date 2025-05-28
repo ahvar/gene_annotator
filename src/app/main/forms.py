@@ -1,3 +1,4 @@
+from flask import request
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField, TextAreaField
 from wtforms.validators import ValidationError, DataRequired, Length
@@ -48,3 +49,14 @@ class GeneAnnotationForm(FlaskForm):
     wikigene_name = StringField(_l("Wikigene Name"))
     gene_description = TextAreaField(_l("Gene Description"))
     submit = SubmitField(_l("Search"))
+
+
+class SearchForm(FlaskForm):
+    q = StringField(_l("Search"), validators=[DataRequired()])
+
+    def __init__(self, *args, **kwargs):
+        if "formdata" not in kwargs:
+            kwargs["formdata"] = request.args
+        if "meta" not in kwargs:
+            kwargs["meta"] = {"csrf": False}
+        super(SearchForm, self).__init__(*args, **kwargs)
