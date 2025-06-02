@@ -36,8 +36,43 @@ class TestConfig(Config):
     RUNS_PER_PAGE = 3
 
 
+class MockElasticsearch:
+    def index(self, *args, **kwargs):
+        return True
+
+    def search(self, *args, **kwargs):
+        return {"hits": {"total": {"value": 0}, "hits": []}}
+
+    def delete(self, *args, **kwargs):
+        return True
+
+    @classmethod
+    def reindex(cls):
+        pass
+
+
+def mock_reindex():
+    pass
+
+
+add_to_index_patch = patch("src.app.search.add_to_index", lambda *args, **kwrgs: None)
+remove_from_index_patch = patch(
+    "src.app.search.remove_from_index", lambda *args, **kwargs: None
+)
+
+
 class TestResearcherModel(unittest.TestCase):
     def setUp(self):
+        add_to_index_patch.start()
+        remove_from_index_patch.start()
+        es_constructor = patch(
+            "src.app.__init__.Elasticsearch", return_value=MockElasticsearch
+        )
+        self.mock_es = es_constructor.start()
+        reindex_patcher = patch(
+            "src.app.models.searchable.SearchableMixin.reindex", mock_reindex
+        )
+        self.mock_reindex = reindex_patcher.start()
         self.app = create_app(TestConfig)
         self.app_context = self.app.app_context()
         self.app_context.push()
@@ -47,6 +82,9 @@ class TestResearcherModel(unittest.TestCase):
         db.session.remove()
         db.drop_all()
         self.app_context.pop()
+
+        self.es_patcher.stop()
+        self.reindex_patcher.stop()
 
     def test_password_hashing(self):
         r = Researcher(researcher_name="susan", email="susan@example.com")
