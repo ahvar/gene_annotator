@@ -4,16 +4,14 @@ import unittest
 from unittest.mock import patch, MagicMock
 import pytest
 
-try:
-    import sqlalchemy as sa
-    from src.app import create_app, db
-    from src.app.models.researcher import Researcher, Post
-    from src.app.models.gene import Gene, GeneAnnotation
-    from src.app.models.pipeline_run import PipelineResult, PipelineRun
-    from src.app.auth.email_service import send_password_reset_email
-    from src.config import Config
-except ModuleNotFoundError as e:  # pragma: no cover - optional dependency
-    pytest.skip(f"Required dependencies not installed: {e}", allow_module_level=True)
+
+import sqlalchemy as sa
+from src.app import create_app, db
+from src.app.models.researcher import Researcher, Post
+from src.app.models.gene import Gene, GeneAnnotation
+from src.app.models.pipeline_run import PipelineResult, PipelineRun
+from src.app.auth.email_service import send_password_reset_email
+from src.config import Config
 
 
 class TestConfig(Config):
