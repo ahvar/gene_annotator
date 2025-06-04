@@ -2,28 +2,15 @@
 Utility functions for ETL pipeline
 """
 
-try:
-    import typer
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-
-    class _TyperModule:
-        class BadParameter(Exception):
-            pass
-
-        class Context:
-            pass
-
-    typer = _TyperModule()
+import typer
 import logging
 import sys
 import os
 from pathlib import Path
 from datetime import datetime, time, UTC
 
-try:
-    import pandas as pd
-except ModuleNotFoundError:  # pragma: no cover - optional dependency
-    pd = None
+
+import pandas as pd
 from glob import glob
 from flask_babel import _
 from src.utils.logging_utils import LoggingUtils, LogFileCreationError
