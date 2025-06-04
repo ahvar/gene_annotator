@@ -23,7 +23,17 @@ from src.app.models.pipeline_run_service import (
 )
 from src.app.translate import translate
 from src.app.main import bp
-from src.utils.references import GENE_ANNOTATOR_FRONTEND
+from src.utils.pipeline_utils import GeneReader
+from src.utils.references import (
+    GENE_ANNOTATOR_FRONTEND,
+    gene_stable_id_col,
+    gene_type_col,
+    gene_name_col,
+    hgnc_id_col,
+    hgnc_name,
+    panther_id_col,
+    tigrfam_id_col,
+)
 
 frontend_logger = logging.getLogger(GENE_ANNOTATOR_FRONTEND)
 
@@ -351,64 +361,13 @@ def get_paginated_annotations(page):
 @login_required
 def index():
     """Home page with pipeline controls and datasets"""
-    post_form = PostForm()
-    if post_form.validate_on_submit():
-        try:
-            language = detect(form.post.data)
-        except LangDetectException:
-            language = ""
-        post = Post(body=post_form.post.data, author=current_user, language=language)
-        db.session.add(post)
-        db.session.commit()
-        flash(_("Your post is now live!"))
-        return redirect(url_for("main.index"))
-
-    # Set up page and pagination for posts
-    page = request.args.get("page", 1, type=int)
-    posts = db.paginate(
-        current_user.following_posts(),
-        page=page,
-        per_page=current_app.config["POSTS_PER_PAGE"],
-        error_out=False,
-    )
-
-    posts_next_url = (
-        url_for("main.index", page=posts.next_num) if posts.has_next else None
-    )
-    posts_prev_url = (
-        url_for("main.index", page=posts.prev_num) if posts.has_prev else None
-    )
-
-    page = request.args.get("page", 1, type=int)
-
     latest_run = get_latest_pipeline_run()
-
-    genes = get_paginated_genes(page)
-    annotations = get_paginated_annotations(page)
     form = EmptyForm()
     return render_template(
         "index.html",
         title=_("Home"),
         form=form,
-        post_form=post_form,
-        posts=posts,
-        genes=genes,
         latest_run=latest_run,
-        posts_next_url=posts_next_url,
-        posts_prev_url=posts_prev_url,
-        annotations=annotations,
-        next_url=url_for("main.index", page=genes.next_num) if genes.has_next else None,
-        prev_url=url_for("main.index", page=genes.prev_num) if genes.has_prev else None,
-        annotations_next_url=(
-            url_for("main.index", page=annotations.next_num)
-            if annotations.has_next
-            else None
-        ),
-        annotations_prev_url=(
-            url_for("main.index", page=annotations.prev_num)
-            if annotations.has_prev
-            else None
-        ),
     )
 
 
@@ -433,6 +392,16 @@ def explore_genes():
 
     Requires authentication via @login_required decorator.
     """
+    # Check if we need to load gene data
+    gene_count = db.session.scalar(sa.func.count(Gene.id))
+    if gene_count == 0:
+        # No genes in database - load initial data
+        frontend_logger.info(
+            _("No genes found in database. Loading initial gene data...")
+        )
+        load_gene_and_annotation_data()
+        flash(_("Initial gene data has been loaded."))
+
     page = request.args.get("page", 1, type=int)
     genes = get_paginated_genes(page)
     return render_template(
@@ -473,6 +442,17 @@ def explore_annotations():
 
     Requires authentication via @login_required decorator.
     """
+    # Check if we need to load annotation data
+    annotation_count = db.session.scalar(sa.func.count(GeneAnnotation.id))
+
+    if annotation_count == 0:
+        # No annotations in database - load initial data
+        frontend_logger.info(
+            _("No annotations found in database. Loading initial annotation data...")
+        )
+        load_gene_and_annotation_data()
+        flash(_("Initial gene annotation data has been loaded."))
+
     page = request.args.get("page", 1, type=int)
     annotations = get_paginated_annotations(page)
     return render_template(
@@ -490,6 +470,48 @@ def explore_annotations():
             else None
         ),
     )
+
+
+def load_gene_and_annotation_data():
+    """Load both gene and annotation data from files into database"""
+    project_root = Path(__file__).resolve().parent.parent.parent.parent
+    data_dir = project_root / "src" / "etl" / "data"
+
+    gene_reader = GeneReader(input_dir=data_dir)
+    gene_reader.find_and_load_gene_data()
+    gene_reader.remove_duplicates()
+
+    # Load genes
+    for _, row in gene_reader.genes.iterrows():
+        gene = Gene(
+            gene_stable_id=row[gene_stable_id_col],
+            gene_type=row.get(gene_type_col),
+            gene_name=row.get(gene_name_col),
+            hgnc_name=row.get(hgnc_name),
+            hgnc_id=row.get(hgnc_id_col),
+            hgnc_id_exists=bool(row.get(hgnc_id_col)),
+        )
+        db.session.add(gene)
+
+    # Load annotations
+    for _, row in gene_reader.gene_annotations.iterrows():
+        annotation = GeneAnnotation(
+            gene_stable_id=row[gene_stable_id_col],
+            hgnc_id=row.get(hgnc_id_col),
+            panther_id=row.get(panther_id_col),
+            tigrfam_id=row.get(tigrfam_id_col),
+            wikigene_name=row.get("wikigene_name"),
+            gene_description=row.get("gene_description"),
+        )
+        db.session.add(annotation)
+
+    db.session.commit()
+    frontend_logger.info(
+        f"Loaded {gene_reader.genes.shape[0]} genes and "
+        f"{gene_reader.gene_annotations.shape[0]} annotations"
+    )
+
+    return gene_reader.genes.shape[0], gene_reader.gene_annotations.shape[0]
 
 
 @bp.route("/researcher/<researcher_name>")

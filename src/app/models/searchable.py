@@ -1,6 +1,5 @@
 import sqlalchemy as sa
-from src.app import db
-from src.app.search import add_to_index, remove_from_index, query_index
+from src.app import db, search
 
 
 class SearchableMixin(object):
@@ -94,14 +93,14 @@ class SearchableMixin(object):
         """
         for obj in session._changes["add"]:
             if isinstance(obj, SearchableMixin):
-                add_to_index(obj.__tablename__, obj)
+                search.add_to_index(obj.__tablename__, obj)
 
         for obj in session._changes["update"]:
             if isinstance(obj, SearchableMixin):
-                add_to_index(obj.__tablename__, obj)
+                search.add_to_index(obj.__tablename__, obj)
         for obj in session._changes["delete"]:
             if isinstance(obj, SearchableMixin):
-                remove_from_index(obj.__tablename__, obj)
+                search.remove_from_index(obj.__tablename__, obj)
         session._changes = None
 
     @classmethod
@@ -119,7 +118,7 @@ class SearchableMixin(object):
             Post.reindex()
         """
         for obj in db.session.scalars(sa.select(cls)):
-            add_to_index(cls.__tablename__, obj)
+            search.add_to_index(cls.__tablename__, obj)
 
 
 db.event.listen(db.session, "before_commit", SearchableMixin.before_commit)
