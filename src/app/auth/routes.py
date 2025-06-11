@@ -34,7 +34,7 @@ def login():
             flash(_("Invalid username or password"))
             return redirect(url_for("auth.login"))
         login_user(user, remember=form.remember_me.data)
-        next_page = request.args.get("next", "main.index")
+        next_page = request.args.get("next", url_for("main.index"))
         if next_page:
             parsed_url = urlsplit(next_page)
             if parsed_url.netloc != "" or parsed_url.scheme:
@@ -44,10 +44,10 @@ def login():
                         next_page=next_page,
                     )
                 )
-                next_page = "main.index"
-            else:
-                next_page = next_page.lstrip("/") or "main.index"
-        return redirect(url_for(next_page))
+                next_page = url_for("main.index")
+            if not next_page.startswith("/"):
+                next_page = "/" + next_page
+        return redirect(next_page)
     return render_template("auth/login.html", title="Sign In", form=form)
 
 

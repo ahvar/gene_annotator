@@ -1,0 +1,89 @@
+[
+  {
+    "researcher_name": "john_researcher",
+    "email": "john_researcher@gmail.com",
+    "password": "johnpw",
+    "about_me": "Geneticist specializing in CRISPR applications",
+    "profile_type": "regular",
+    "following": ["arthurvargas", "bob_biologist"]
+  },
+  {
+    "researcher_name": "arthurvargas",
+    "email": "arthurvargasdev@gmail.com",
+    "password": "pw",
+    "about_me": "Bioinformatics software engineer",
+    "profile_type": "regular",
+    "following": ["bob_biologist", "alice_admin"]
+  },
+  {
+    "researcher_name": "alice_admin",
+    "email": "alice_admin@research.org",
+    "password": "alicepw123",
+    "about_me": "System administrator and bioinformatics specialist",
+    "profile_type": "admin",
+    "following": ["arthurvargas"],
+    "posts": ["Hello all!", "follow me for administrative updates"]
+  },
+  {
+    "researcher_name": "bob_biologist",
+    "email": "bob@biology.edu",
+    "password": "bobsecret",
+    "about_me": "Molecular biologist focusing on human genome annotation",
+    "profile_type": "regular",
+    "posts": ["our latest etl pipeline merges gene and annotation datasets"],
+    "following": ["alice_admin", "arthurvargas"]
+  },
+  {
+    "researcher_name": "emma_enzyme",
+    "email": "emma.enzyme@research-lab.com",
+    "password": "enzymepower",
+    "about_me": "Studying enzymatic reactions in gene expression",
+    "profile_type": "regular",
+    "posts": ["Ran the pipeline, let's take a look at the merged dataset"],
+    "following": ["bob_biologist", "arthurvargas", "alice_admin", "john_researcher"]
+  },
+  {
+    "researcher_name": "david_data",
+    "email": "david.data@biotech.co",
+    "password": "datapower456",
+    "about_me": "Bioinformatics data analyst with 10+ years experience",
+    "profile_type": "regular",
+    "posts": ["Hi everyone!"],
+    "following": ["alice_admin"]
+  },
+  {
+    "researcher_name": "sarah_sequencer",
+    "email": "sarah@genomics.io",
+    "password": "dna$equence",
+    "about_me": "Next-gen sequencing specialist with publication history",
+    "profile_type": "premium"
+  },
+  {
+    "researcher_name": "mike_microscope",
+    "email": "mike@cellbiology.net",
+    "password": "cellview3d",
+    "about_me": "Cell biologist interested in genetic markers",
+    "profile_type": "regular"
+  },
+  {
+    "researcher_name": "patricia_protein",
+    "email": "pprotein@folding.org",
+    "password": "fold1ngPr0t",
+    "about_me": "Protein folding and gene expression research",
+    "profile_type": "regular"
+  },
+  {
+    "researcher_name": "carlos_cancer",
+    "email": "carlos@oncology.med",
+    "password": "c@ncerRe$earch",
+    "about_me": "Oncology researcher studying genetic markers for early detection",
+    "profile_type": "premium"
+  },
+  {
+    "researcher_name": "test-user",
+    "email": "test@example.com",
+    "password": "password123",
+    "about_me": "Test account with minimal privileges",
+    "profile_type": "test"
+  }
+]

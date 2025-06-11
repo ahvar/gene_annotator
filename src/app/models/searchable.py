@@ -43,7 +43,7 @@ class SearchableMixin(object):
         Example:
             results, total = Post.search('flask tutorial', 1, 10)
         """
-        ids, total = query_index(cls.__tablename__, expression, page, per_page)
+        ids, total = search.query_index(cls.__tablename__, expression, page, per_page)
         if total == 0:
             return [], 0
         when = []

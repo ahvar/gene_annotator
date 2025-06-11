@@ -667,7 +667,7 @@ def follow(researcher_name):
         if researcher == current_user:
             flash(_("You cannot follow yourself!"))
             return redirect(url_for("main.researcher", researcher_name=researcher_name))
-        current_user.follow(researcher_name)
+        current_user.follow(researcher)
         db.session.commit()
         flash(
             _(
