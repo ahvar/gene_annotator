@@ -32,7 +32,7 @@ ETL pipeline and microblog
 - Gene, GeneAnnotation, Researcher, Post, PipeineRun
 
 # How to Run Gene Annotator Locally
-Here are the steps to run Gene Annotator from the command-line in your local environment. 
+Here are the steps to run Gene Annotator CLI locally. 
     
 ## Extraction: 
 Extract or clone all files to your local environment.
@@ -109,10 +109,4 @@ Here are the steps to build the Gene Annotator container and run it
     # the Dockerfile has an ENTRYPOINT that points to etl/pipeline.py
     # running a container from this image will automatically execute the script
     $ docker run --name gene_annotate_container gene_annotate
-
-## Run Interactively
-    # to inspect output files in the container, run unit tests, or the api/app.py
-    # run the container interactively and override the ENTRYPOINT
-    # map port '5000' of the host to port '5000' of the container
-    $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name gene_annotate_container gene_annotate
 
