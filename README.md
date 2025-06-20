@@ -1,4 +1,4 @@
-# Gene Annotator v0.1.0
+# Gene Annotator v1.0.0
 
 # Introduction
 ETL pipeline and microblog for bioinformatics researchers to process, analyze, and collaborate on gene annotation data.
