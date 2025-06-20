@@ -9,25 +9,20 @@ phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
-          | docker login --username AWS --password-stdin $REPO_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
       - BRANCH=$(echo $CODEBUILD_WEBHOOK_TRIGGER | cut -d/ -f2)
       - TAG=${BRANCH}-${CODEBUILD_BUILD_ID}
       - echo "Building $REPO_URI:$TAG"
   build:
     commands:
-      - echo Building the Docker image from root Dockerfile...
-      - docker build \
-          -f Dockerfile \
-          -t $REPO_URI:$TAG \
-          .
+      - echo "Building the Docker image..."
+      - docker build -f Dockerfile -t $REPO_URI:$TAG .
   post_build:
     commands:
-      - echo Pushing Docker image...
+      - echo "Pushing Docker image..."
       - docker push $REPO_URI:$TAG
-      - echo Writing imagedefinitions.json for ECS Deploy…
-      - printf '[{"name":"gene-annotator","imageUri":"%s"}]' \
-          $REPO_URI:$TAG > imagedefinitions.json
+      - echo "Writing imagedefinitions.json for ECS Deploy…"
+      - printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
 
 artifacts:
   files:
