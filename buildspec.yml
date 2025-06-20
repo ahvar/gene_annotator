@@ -16,16 +16,15 @@ phases:
       - echo "Building $REPO_URI:$TAG"
   build:
     commands:
-      - echo Building the Docker image...
+      - echo Building the Docker image from root Dockerfile...
       - docker build \
           -f Dockerfile \
           -t $REPO_URI:$TAG \
-          -t $REPO_URI:latest
+          .
   post_build:
     commands:
-      - echo Pushing Docker images...
+      - echo Pushing Docker image...
       - docker push $REPO_URI:$TAG
-      - docker push $REPO_URI:latest
       - echo Writing imagedefinitions.json for ECS Deploy…
       - printf '[{"name":"gene-annotator","imageUri":"%s"}]' \
           $REPO_URI:$TAG > imagedefinitions.json
