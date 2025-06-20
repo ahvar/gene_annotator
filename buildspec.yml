@@ -18,10 +18,9 @@ phases:
     commands:
       - echo Building the Docker image...
       - docker build \
-          -f containers/Dockerfile \
+          -f Dockerfile \
           -t $REPO_URI:$TAG \
-          -t $REPO_URI:latest \
-          containers/
+          -t $REPO_URI:latest
   post_build:
     commands:
       - echo Pushing Docker images...
