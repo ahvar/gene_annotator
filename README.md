@@ -4,20 +4,26 @@
 ETL pipeline and microblog
 
 # Key Features
-- Data Processing Pipeline
-- Processes gene data from standard CSV and TSV formats
+- Data processing pipeline for gene and annotation datasets
 - Identifies and removes duplicate records
 - Merges gene dataset and annotation dataset
 - Performs data validation and cleansing
-
-# Collaboration and Research Platform
-- Gene and Annotation dataset exploration
-- Research community with microblogging capabilities
-- Searchable posts from the community
-- Researcher profiles and collaboration network
+- Collaboration network with microblogging capabilities and researcher profiles
 - Pipeline run history and sharing
+- Full text search for posts
 
-# Run Gene Annotator Locally
+# Application Architecture
+- Flask Web App
+- SQLAlchemy ORM: DB interaction layer
+- Elasticsearch: Full-text search for researcher posts
+- Alembic: Database migrations
+- Pandas: File I/O and data processing steps
+- Typer CLI
+
+# Data Models
+- Gene, GeneAnnotation, Researcher, Post, PipeineRun
+
+# How to Run Gene Annotator Locally
 Here are the steps to run Gene Annotator from the command-line in your local environment. 
     
 ## Extraction: 
