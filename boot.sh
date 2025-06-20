@@ -1,5 +1,9 @@
 #!/bin/bash
 export PYTHONPATH=/opt/pipeline:$PYTHONPATH
+
+# Inject the DB URL from the secret
+export DATABASE_URL="mysql+pymysql://gene-annotator:${MYSQL_PASSWORD}@mysql/gene_annotator"
+
 # Maximum number of retries
 MAX_RETRIES=30
 RETRY_COUNT=0

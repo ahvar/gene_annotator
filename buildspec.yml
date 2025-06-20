@@ -1,0 +1,23 @@
+env:
+  variables:
+    REPO_URI: "001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator"
+phases:
+  pre_build:
+    commands:
+      - BRANCH=$(echo $CODEBUILD_WEBHOOK_TRIGGER | cut -d/ -f2)
+      - TAG=${BRANCH}-${CODEBUILD_BUILD_ID}
+      - echo "Building $REPO_URI:$TAG"
+  build:
+    commands:
+      - docker build -t $REPO_URI:$TAG containers/
+      - docker tag $REPO_URI:$TAG $REPO_URI:latest
+  post_build:
+    commands:
+      - |
+        printf '[{"name":"gene-annotator","imageUri":"%s"}]' \
+          $REPO_URI:$TAG > imagedefinitions.json
+      - docker push $REPO_URI:$TAG
+      - docker push $REPO_URI:latest
+artifacts:
+  files:
+    - imagedefinitions.json
