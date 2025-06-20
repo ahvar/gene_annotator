@@ -8,9 +8,18 @@ env:
 phases:
   pre_build:
     commands:
-      - echo Logging into Amazon ECR...
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
-        | docker login --username AWS --password-stdin $REPO_URI
+      - echo "AWS CLI version:"
+      - aws --version
+      - echo "Docker version:"
+      - docker --version
+      - echo "Logging in to Amazon ECR..."
+      - |
+        if aws ecr get-login-password --region $AWS_DEFAULT_REGION >/dev/null 2>&1; then
+        aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+          | docker login --username AWS --password-stdin $REPO_URI
+        else
+          $(aws ecr get-login --no-include-email --region $AWS_DEFAULT_REGION)
+        fi
       - BRANCH=$(echo $CODEBUILD_WEBHOOK_TRIGGER | cut -d/ -f2)
       - TAG=${BRANCH}-${CODEBUILD_BUILD_ID}
       - echo "Building $REPO_URI:$TAG"
