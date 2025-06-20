@@ -10,8 +10,7 @@ phases:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
-      - BRANCH=$(echo $CODEBUILD_WEBHOOK_TRIGGER | cut -d/ -f2)
-      - TAG=${BRANCH}-${CODEBUILD_BUILD_ID}
+      - TAG=$CODEBUILD_BUILD_ID
       - echo "Building $REPO_URI:$TAG"
   build:
     commands:
