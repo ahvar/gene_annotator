@@ -1,23 +1,37 @@
+version: 0.2
+
 env:
   variables:
+    AWS_DEFAULT_REGION: "us-east-1"
     REPO_URI: "001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator"
+
 phases:
   pre_build:
     commands:
+      - echo Logging into Amazon ECR...
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
+        | docker login --username AWS --password-stdin $REPO_URI
       - BRANCH=$(echo $CODEBUILD_WEBHOOK_TRIGGER | cut -d/ -f2)
       - TAG=${BRANCH}-${CODEBUILD_BUILD_ID}
       - echo "Building $REPO_URI:$TAG"
   build:
     commands:
-      - docker build -t $REPO_URI:$TAG containers/
-      - docker tag $REPO_URI:$TAG $REPO_URI:latest
+      - echo Building the Docker image...
+      - docker build \
+          -f containers/gene-annotator-dockerfile \
+          -t $REPO_URI:$TAG \
+          -t $REPO_URI:latest \
+          containers/
   post_build:
     commands:
-      - |
-        printf '[{"name":"gene-annotator","imageUri":"%s"}]' \
-          $REPO_URI:$TAG > imagedefinitions.json
+      - echo Pushing Docker images...
       - docker push $REPO_URI:$TAG
       - docker push $REPO_URI:latest
+      - echo Writing imagedefinitions.json for ECS Deploy…
+      - printf '[{"name":"gene-annotator","imageUri":"%s"}]' \
+          $REPO_URI:$TAG > imagedefinitions.json
+
 artifacts:
   files:
     - imagedefinitions.json
+
