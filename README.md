@@ -1,7 +1,21 @@
 # Gene Annotator v0.1.0
 
-# Introduction 
-ETL pipeline and API for duplicate and unique record identification. 
+# Introduction
+ETL pipeline and microblog for bioinformatics researchers to process, analyze, and collaborate on gene annotation data.
+
+# Key Features
+- Data Processing Pipeline
+- Processes gene data from standard CSV and TSV formats
+- Identifies and removes duplicate records
+- Merges gene dataset and annotation dataset
+- Performs data validation and cleansing
+
+# Collaboration and Research Platform
+- Gene and Annotation dataset exploration
+- Research community with microblogging capabilities
+- Searchable posts from the community
+- Researcher profiles and collaboration network
+- Pipeline run history and sharing
 
 # Run Gene Annotator Locally
 Here are the steps to run Gene Annotator from the command-line in your local environment. 
