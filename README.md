@@ -4,13 +4,21 @@
 ETL pipeline and microblog
 
 # Key Features
-- Data processing pipeline for gene and annotation datasets
-- Identifies and removes duplicate records
-- Merges gene dataset and annotation dataset
-- Performs data validation and cleansing
+- Data processing pipeline
 - Collaboration network with microblogging capabilities and researcher profiles
 - Pipeline run history and sharing
 - Full text search for posts
+
+# Data Processing Steps
+- Reads gene and annotation data from file, loads to sql db
+- Identifies and logs duplicate records
+- Removes duplicate records and logs the unique ones
+- Writes the gene_type count to file
+- Determines if hgnc_id exists and appends a new column hgnc_id_exists
+- Merges gene and annotation datasets
+- Excludes records where tigrfam_id is null or contains specific undesired values
+- Writes excluded tigrfam_id entries to excluded_tigrfam_ids.csv
+- Stores results as PipelineRun in db and writes to a final_results file
 
 # Application Architecture
 - Flask Web App
@@ -107,15 +115,4 @@ Here are the steps to build the Gene Annotator container and run it
     # run the container interactively and override the ENTRYPOINT
     # map port '5000' of the host to port '5000' of the container
     $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name gene_annotate_container gene_annotate
-
-# Functionality
-    - Reads data from genes.csv and gene_annotations.tsv.
-    - Identifies and logs duplicate records.
-    - Removes duplicate records and logs the unique ones.
-    - Writes the gene_type count to gene_type_count.csv.
-    - Determines if hgnc_id exists and appends a new column hgnc_id_exists.
-    - Merges gene data with gene annotations.
-    - Excludes records where tigrfam_id is null or contains specific undesired values.
-    - Writes excluded tigrfam_id entries to excluded_tigrfam_ids.csv.
-    - Outputs the final merged data to final_results.csv.
 
