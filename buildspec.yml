@@ -18,7 +18,7 @@ phases:
     commands:
       - echo Building the Docker image...
       - docker build \
-          -f containers/gene-annotator-dockerfile \
+          -f containers/Dockerfile \
           -t $REPO_URI:$TAG \
           -t $REPO_URI:latest \
           containers/
@@ -34,4 +34,3 @@ phases:
 artifacts:
   files:
     - imagedefinitions.json
-
