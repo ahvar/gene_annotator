@@ -10,18 +10,89 @@ phases:
     commands:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
-      - TAG=${CODEBUILD_BUILD_ID##*:}
-      - echo "Building $REPO_URI:$TAG"
+      
+      # Extract first 5 chars of build ID
+      - BUILD_SHORT=$(echo ${CODEBUILD_BUILD_ID} | cut -c1-5)
+      
+      # Parse branch name from source version
+      - |
+        if [[ $CODEBUILD_WEBHOOK_HEAD_REF == refs/heads/* ]]; then
+          # Extract branch name from refs/heads/...
+          BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||')
+        else
+          # Fallback to source version (non-webhook builds)
+          BRANCH_NAME=$CODEBUILD_SOURCE_VERSION
+        fi
+        
+        echo "Branch name: $BRANCH_NAME"
+        
+        # Handle different branch patterns
+        if [[ $BRANCH_NAME == feature/* ]]; then
+          # Parse feature name from feature/<dev-initials>/<project-name>/<feature-name>
+          FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}')
+          TAG="${FEATURE_NAME}-${BUILD_SHORT}"
+          
+        elif [[ $BRANCH_NAME == develop ]]; then
+          # Develop branch
+          TAG="develop-${BUILD_SHORT}"
+          
+        elif [[ $BRANCH_NAME == main ]]; then
+          # Main branch
+          TAG="main-${BUILD_SHORT}"
+          
+        elif [[ $BRANCH_NAME == release/* ]]; then
+          # Parse semver from release/<semver>
+          SEMVER=$(echo $BRANCH_NAME | sed 's|release/||')
+          TAG="${SEMVER}-${BUILD_SHORT}"
+          RELEASE_TAG="${SEMVER}"
+          IS_RELEASE=true
+          
+        else
+          # Default fallback
+          TAG="build-${BUILD_SHORT}"
+        fi
+        
+        # Ensure tag is valid for Docker (alphanumeric, underscore, hyphen only)
+        TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/-/g')
+        
+        echo "Using tag: $TAG"
+      
   build:
     commands:
       - echo "Building the Docker image..."
       - docker build -f Dockerfile -t $REPO_URI:$TAG .
+      - docker tag $REPO_URI:$TAG $REPO_URI:latest
+      
+      # If it's a release branch, also create the release tag
+      - |
+        if [[ "$IS_RELEASE" == "true" ]]; then
+          echo "Creating release tag $RELEASE_TAG"
+          docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG
+        fi
+  
   post_build:
     commands:
-      - echo "Pushing Docker image..."
+      - echo "Pushing Docker images..."
       - docker push $REPO_URI:$TAG
+      - docker push $REPO_URI:latest
+      
+      # If it's a release branch, also push the release tag
+      - |
+        if [[ "$IS_RELEASE" == "true" ]]; then
+          echo "Pushing release tag $RELEASE_TAG"
+          docker push $REPO_URI:$RELEASE_TAG
+        fi
+      
       - echo "Writing imagedefinitions.json for ECS Deploy…"
-      - printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
+      # Use the appropriate tag for the deployment
+      - |
+        if [[ "$IS_RELEASE" == "true" && "$CODEBUILD_WEBHOOK_TRIGGER" == "release" ]]; then
+          # In prod environment, use the semver tag
+          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$RELEASE_TAG > imagedefinitions.json
+        else
+          # In lower environments, use the build-specific tag
+          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
+        fi
 
 artifacts:
   files:
