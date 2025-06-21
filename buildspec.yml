@@ -28,18 +28,18 @@ phases:
       - "if [[ ! -f 'Dockerfile' ]]; then if [[ -f 'containers/Dockerfile' ]]; then DOCKERFILE_PATH='containers/Dockerfile'; else echo 'ERROR: No Dockerfile found'; exit 1; fi; else DOCKERFILE_PATH='Dockerfile'; fi
       - docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
       - docker tag $REPO_URI:$TAG $REPO_URI:latest
-      - echo Successfully built image $REPO_URI:$TAG
+      - "echo Successfully built image $REPO_URI:$TAG"
       - if [[ "$IS_RELEASE" == "true" ]]; then echo Creating release tag $RELEASE_TAG; docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG; fi
 
   post_build:
     commands:
       - echo Pushing Docker images...
       - docker push $REPO_URI:$TAG
-      - echo Successfully pushed image $REPO_URI:$TAG
+      - "echo Successfully pushed image $REPO_URI:$TAG"
       - echo Deleting existing latest tag if it exists
       - aws ecr batch-delete-image --repository-name $REPO_NAME --image-ids imageTag=latest || true
       - docker push $REPO_URI:latest
-      - echo Successfully pushed image $REPO_URI:latest
+      - "echo Successfully pushed image $REPO_URI:latest"
       - if [[ "$IS_RELEASE" == "true" ]]; then echo Pushing release tag $RELEASE_TAG; docker push $REPO_URI:$RELEASE_TAG; echo Successfully pushed image $REPO_URI:$RELEASE_TAG; fi
       - aws ecr start-image-scan --repository-name $REPO_NAME --image-id imageTag=$TAG || true
       - echo Writing imagedefinitions.json for ECS Deploy...
