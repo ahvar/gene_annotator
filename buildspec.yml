@@ -11,6 +11,10 @@ phases:
       - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
       
+      # Extract repository name from URI for reuse
+      - REPO_NAME=$(echo $REPO_URI | cut -d'/' -f2)
+      - echo "Repository name: $REPO_NAME"
+      
       # Extract a unique identifier for every build
       - |
         # Use timestamp to guarantee uniqueness
@@ -65,8 +69,25 @@ phases:
   build:
     commands:
       - echo "Building the Docker image..."
-      - docker build -f Dockerfile -t $REPO_URI:$TAG .
+      
+      # Verify Dockerfile location
+      - |
+        if [[ ! -f "Dockerfile" ]]; then
+          echo "Dockerfile not found in expected location"
+          if [[ -f "containers/Dockerfile" ]]; then
+            echo "Found Dockerfile in containers/, updating build command"
+            DOCKERFILE_PATH="containers/Dockerfile"
+          else
+            echo "ERROR: No Dockerfile found"
+            exit 1
+          fi
+        else
+          DOCKERFILE_PATH="Dockerfile"
+        fi
+      
+      - docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
       - docker tag $REPO_URI:$TAG $REPO_URI:latest
+      - echo "Successfully built image $REPO_URI:$TAG"
       
       # For release branches
       - |
@@ -79,14 +100,29 @@ phases:
     commands:
       - echo "Pushing Docker images..."
       - docker push $REPO_URI:$TAG
+      - echo "Successfully pushed image $REPO_URI:$TAG"
+
+      # Delete the latest tag before pushing a new one
+      - |
+        echo "Deleting existing latest tag if it exists"
+        aws ecr batch-delete-image \
+          --repository-name $REPO_NAME \
+          --image-ids imageTag=latest || true
+    
+      # Push the latest tag after deletion
       - docker push $REPO_URI:latest
+      - echo "Successfully pushed image $REPO_URI:latest"
       
       # For release branches
       - |
         if [[ "$IS_RELEASE" == "true" ]]; then
           echo "Pushing release tag $RELEASE_TAG"
           docker push $REPO_URI:$RELEASE_TAG
+          echo "Successfully pushed image $REPO_URI:$RELEASE_TAG"
         fi
+      
+      # Start image scanning (optional)
+      - aws ecr start-image-scan --repository-name $REPO_NAME --image-id imageTag=$TAG || true
       
       - echo "Writing imagedefinitions.json for ECS Deploy…"
       - |
@@ -97,6 +133,8 @@ phases:
           # In other environments, use build-specific tag
           printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
         fi
+      
+      - echo "Build completed successfully at $(date)"
 
 artifacts:
   files:
