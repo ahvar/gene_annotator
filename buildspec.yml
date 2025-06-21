@@ -11,15 +11,15 @@ phases:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
       - REPO_NAME=$(echo $REPO_URI | cut -d'/' -f2)
-      - echo Repository name: $REPO_NAME
+      - "echo Repository name: $REPO_NAME"
       - TIMESTAMP=$(date +%Y%m%d%H%M%S)
       - echo Extracting branch info...
       - if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" ]]; then BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||'); elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then BRANCH_NAME=$CODEBUILD_GIT_BRANCH; elif [[ -f "/codebuild/output/src*/src/.git/HEAD" ]]; then BRANCH_NAME=$(cat /codebuild/output/src*/src/.git/HEAD | sed 's|ref: refs/heads/||'); else BRANCH_NAME=${BRANCH_NAME:-"pipeline"}; fi
-      - echo Detected branch: $BRANCH_NAME
+      - "echo Detected branch: $BRANCH_NAME"
       - echo Handling branch patterns...
       - if [[ "$BRANCH_NAME" == feature/* ]]; then FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}'); TAG="${FEATURE_NAME}-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "develop" ]]; then TAG="develop-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "main" ]]; then TAG="main-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == release/* ]]; then SEMVER=$(echo $BRANCH_NAME | sed 's|release/||'); TAG="${SEMVER}-${TIMESTAMP}"; RELEASE_TAG="${SEMVER}"; IS_RELEASE=true; else TAG="build-${TIMESTAMP}"; fi
       - TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/-/g')
-      - echo Using tag: $TAG
+      - "echo Using tag: $TAG"
 
   build:
     commands:
