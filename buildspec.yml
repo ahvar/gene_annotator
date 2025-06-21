@@ -2,110 +2,49 @@ version: 0.2
 
 env:
   variables:
-    AWS_DEFAULT_REGION: "us-east-1"
-    REPO_URI: "001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator"
+    AWS_DEFAULT_REGION: us-east-1
+    REPO_URI: 001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator
 
 phases:
   pre_build:
     commands:
-      - echo "Logging in to Amazon ECR..."
+      - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
       - REPO_NAME=$(echo $REPO_URI | cut -d'/' -f2)
-      - echo "Repository name: $REPO_NAME"
+      - echo Repository name: $REPO_NAME
       - TIMESTAMP=$(date +%Y%m%d%H%M%S)
-      - |
-        # Extract branch info
-        if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" ]]; then
-          # Direct webhook build
-          BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||')
-        elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then
-          # Git branch available
-          BRANCH_NAME=$CODEBUILD_GIT_BRANCH
-        elif [[ -f "/codebuild/output/src*/src/.git/HEAD" ]]; then
-          # Try to read from git directly
-          BRANCH_NAME=$(cat /codebuild/output/src*/src/.git/HEAD | sed 's|ref: refs/heads/||')
-        else
-          # When running in CodePipeline, get from environment variable
-          # Use default if not available
-          BRANCH_NAME=${BRANCH_NAME:-"pipeline"}
-        fi
-      - echo "Detected branch: $BRANCH_NAME"
-      - |
-        # Handle different branch patterns
-        if [[ "$BRANCH_NAME" == feature/* ]]; then
-          # Extract feature name
-          FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}')
-          TAG="${FEATURE_NAME}-${TIMESTAMP}"
-        elif [[ "$BRANCH_NAME" == "develop" ]]; then
-          TAG="develop-${TIMESTAMP}"
-        elif [[ "$BRANCH_NAME" == "main" ]]; then
-          TAG="main-${TIMESTAMP}"
-        elif [[ "$BRANCH_NAME" == release/* ]]; then
-          SEMVER=$(echo $BRANCH_NAME | sed 's|release/||')
-          TAG="${SEMVER}-${TIMESTAMP}"
-          RELEASE_TAG="${SEMVER}"
-          IS_RELEASE=true
-        else
-          # Default case - always unique
-          TAG="build-${TIMESTAMP}"
-        fi
+      - echo Extracting branch info...
+      - if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" ]]; then BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||'); elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then BRANCH_NAME=$CODEBUILD_GIT_BRANCH; elif [[ -f "/codebuild/output/src*/src/.git/HEAD" ]]; then BRANCH_NAME=$(cat /codebuild/output/src*/src/.git/HEAD | sed 's|ref: refs/heads/||'); else BRANCH_NAME=${BRANCH_NAME:-"pipeline"}; fi
+      - echo Detected branch: $BRANCH_NAME
+      - echo Handling branch patterns...
+      - if [[ "$BRANCH_NAME" == feature/* ]]; then FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}'); TAG="${FEATURE_NAME}-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "develop" ]]; then TAG="develop-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "main" ]]; then TAG="main-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == release/* ]]; then SEMVER=$(echo $BRANCH_NAME | sed 's|release/||'); TAG="${SEMVER}-${TIMESTAMP}"; RELEASE_TAG="${SEMVER}"; IS_RELEASE=true; else TAG="build-${TIMESTAMP}"; fi
       - TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/-/g')
-      - echo "Using tag: $TAG"
-  
+      - echo Using tag: $TAG
+
   build:
     commands:
-      - echo "Building the Docker image..."
-      - |
-        if [[ ! -f "Dockerfile" ]]; then
-          echo "Dockerfile not found in expected location"
-          if [[ -f "containers/Dockerfile" ]]; then
-            echo "Found Dockerfile in containers/, updating build command"
-            DOCKERFILE_PATH="containers/Dockerfile"
-          else
-            echo "ERROR: No Dockerfile found"
-            exit 1
-          fi
-        else
-          DOCKERFILE_PATH="Dockerfile"
-        fi
+      - echo Building the Docker image...
+      - echo Checking for Dockerfile...
+      - if [[ ! -f "Dockerfile" ]]; then if [[ -f "containers/Dockerfile" ]]; then DOCKERFILE_PATH="containers/Dockerfile"; else echo "ERROR: No Dockerfile found"; exit 1; fi; else DOCKERFILE_PATH="Dockerfile"; fi
       - docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
       - docker tag $REPO_URI:$TAG $REPO_URI:latest
-      - echo "Successfully built image $REPO_URI:$TAG"
-      - |
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          echo "Creating release tag $RELEASE_TAG"
-          docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG
-        fi
-  
+      - echo Successfully built image $REPO_URI:$TAG
+      - if [[ "$IS_RELEASE" == "true" ]]; then echo Creating release tag $RELEASE_TAG; docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG; fi
+
   post_build:
     commands:
-      - echo "Pushing Docker images..."
+      - echo Pushing Docker images...
       - docker push $REPO_URI:$TAG
-      - echo "Successfully pushed image $REPO_URI:$TAG"
-      - |
-        echo "Deleting existing latest tag if it exists"
-        aws ecr batch-delete-image \
-          --repository-name $REPO_NAME \
-          --image-ids imageTag=latest || true
+      - echo Successfully pushed image $REPO_URI:$TAG
+      - echo Deleting existing latest tag if it exists
+      - aws ecr batch-delete-image --repository-name $REPO_NAME --image-ids imageTag=latest || true
       - docker push $REPO_URI:latest
-      - echo "Successfully pushed image $REPO_URI:latest"
-      - |
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          echo "Pushing release tag $RELEASE_TAG"
-          docker push $REPO_URI:$RELEASE_TAG
-          echo "Successfully pushed image $REPO_URI:$RELEASE_TAG"
-        fi
+      - echo Successfully pushed image $REPO_URI:latest
+      - if [[ "$IS_RELEASE" == "true" ]]; then echo Pushing release tag $RELEASE_TAG; docker push $REPO_URI:$RELEASE_TAG; echo Successfully pushed image $REPO_URI:$RELEASE_TAG; fi
       - aws ecr start-image-scan --repository-name $REPO_NAME --image-id imageTag=$TAG || true
-      - echo "Writing imagedefinitions.json for ECS Deploy…"
-      - |
-        if [[ "$IS_RELEASE" == "true" && "$CODEBUILD_WEBHOOK_TRIGGER" == "release" ]]; then
-          # In prod environment, use semver tag
-          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$RELEASE_TAG > imagedefinitions.json
-        else
-          # In other environments, use build-specific tag
-          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
-        fi
-      - echo "Build completed successfully at $(date)"
+      - echo Writing imagedefinitions.json for ECS Deploy...
+      - if [[ "$IS_RELEASE" == "true" && "$CODEBUILD_WEBHOOK_TRIGGER" == "release" ]]; then printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$RELEASE_TAG > imagedefinitions.json; else printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json; fi
+      - echo Build completed successfully at $(date)
 
 artifacts:
   files:
