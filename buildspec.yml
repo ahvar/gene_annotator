@@ -9,22 +9,32 @@ phases:
   pre_build:
     commands:
       - |
-        echo "Logging in to Amazon ECR..."
+        set -euxo pipefail
+
+        echo "== Environment =="
+        echo "CODEBUILD_SOURCE_VERSION: $CODEBUILD_SOURCE_VERSION"
+        echo "CODEBUILD_BUILD_ID:       $CODEBUILD_BUILD_ID"
+
+        echo "== Logging into ECR =="
         aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
 
-        # Grab the repo name (for later deletes/scans)
+        # Repo name for later API calls
         REPO_NAME=${REPO_URI#*/}
 
-        # Short build ID (first 5 chars of the part after the colon)
+        # Short 5-char build suffix
         RAW_ID=${CODEBUILD_BUILD_ID##*:}
         SHORT_ID=${RAW_ID:0:5}
-        
-        # Figure out the branch from CodePipeline
-        # CODEBUILD_SOURCE_VERSION is like "refs/heads/develop"
-        BRANCH_NAME=${CODEBUILD_SOURCE_VERSION#refs/heads/}
-        echo Detected branch: $BRANCH_NAME
 
-        # Compute TAG (+ optional RELEASE_TAG)
+        echo "== Computing branch/tag =="
+        # Strip refs/heads/ if present; else use as-is
+        if [[ "$CODEBUILD_SOURCE_VERSION" == refs/heads/* ]]; then
+          BRANCH_NAME=${CODEBUILD_SOURCE_VERSION#refs/heads/}
+        else
+          BRANCH_NAME=$CODEBUILD_SOURCE_VERSION
+        fi
+        echo "Determined branch: '$BRANCH_NAME'"
+
+        # tag logic
         if [[ "$BRANCH_NAME" == feature/* ]]; then
           FEATURE=${BRANCH_NAME##*/}
           TAG="${FEATURE}-${SHORT_ID}"
@@ -35,15 +45,16 @@ phases:
         elif [[ "$BRANCH_NAME" == release/* ]]; then
           SEMVER=${BRANCH_NAME#release/}
           TAG="${SEMVER}-${SHORT_ID}"
-          RELEASE_TAG=${SEMVER}
+          RELEASE_TAG=$SEMVER
           IS_RELEASE=true
         else
           TAG="build-${SHORT_ID}"
         fi
 
-        # Sanitize: only allow alphanumerics, ., _, or -
+        # remove illegal tag chars
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
-        echo Using image tag: $TAG
+        echo "Using image tag: '$TAG'"
+
   build:
     commands:
       - |
