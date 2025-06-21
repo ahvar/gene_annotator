@@ -9,8 +9,7 @@ phases:
   pre_build:
     commands:
       - echo "Logging in to Amazon ECR..."
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION \
-          | docker login --username AWS --password-stdin $REPO_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
       - # Use the first 7 chars of the commit SHA as the image tag
       - SHORT_SHA=${CODEBUILD_SOURCE_VERSION:0:7}
       - TAG=$SHORT_SHA
