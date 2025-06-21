@@ -12,44 +12,38 @@ phases:
         echo "Logging in to Amazon ECR..."
         aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
 
-        REPO_NAME=$(echo $REPO_URI | cut -d'/' -f2)
-        echo "Repository name: $REPO_NAME"
+        # Grab the repo name (for later deletes/scans)
+        REPO_NAME=${REPO_URI#*/}
 
-        TIMESTAMP=$(date +%Y%m%d%H%M%S)
-        echo "Extracting branch info..."
-
-        # Determine branch name
-        if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" ]]; then
-          BRANCH_NAME=${CODEBUILD_WEBHOOK_HEAD_REF#refs/heads/}
-        elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then
-          BRANCH_NAME=$CODEBUILD_GIT_BRANCH
-        elif [[ -f "/codebuild/output/src*/src/.git/HEAD" ]]; then
-          BRANCH_NAME=$(sed 's|ref: refs/heads/||' /codebuild/output/src*/src/.git/HEAD)
-        else
-          BRANCH_NAME="pipeline"
-        fi
+        # Short build ID (first 5 chars of the part after the colon)
+        RAW_ID=${CODEBUILD_BUILD_ID##*:}
+        SHORT_ID=${RAW_ID:0:5}
+        
+        # Figure out the branch from CodePipeline
+        # CODEBUILD_SOURCE_VERSION is like "refs/heads/develop"
+        BRANCH_NAME=${CODEBUILD_SOURCE_VERSION#refs/heads/}
         echo "Detected branch: $BRANCH_NAME"
 
-        # Compute TAG and optional RELEASE_TAG
+        # Compute TAG (+ optional RELEASE_TAG)
         if [[ "$BRANCH_NAME" == feature/* ]]; then
-          FEATURE_NAME=${BRANCH_NAME##*/}
-          TAG="${FEATURE_NAME}-${TIMESTAMP}"
+          FEATURE=${BRANCH_NAME##*/}
+          TAG="${FEATURE}-${SHORT_ID}"
         elif [[ "$BRANCH_NAME" == develop ]]; then
-          TAG="develop-${TIMESTAMP}"
+          TAG="develop-${SHORT_ID}"
         elif [[ "$BRANCH_NAME" == main ]]; then
-          TAG="main-${TIMESTAMP}"
+          TAG="main-${SHORT_ID}"
         elif [[ "$BRANCH_NAME" == release/* ]]; then
           SEMVER=${BRANCH_NAME#release/}
-          TAG="${SEMVER}-${TIMESTAMP}"
-          RELEASE_TAG="$SEMVER"
+          TAG="${SEMVER}-${SHORT_ID}"
+          RELEASE_TAG=${SEMVER}
           IS_RELEASE=true
         else
-          TAG="build-${TIMESTAMP}"
+          TAG="build-${SHORT_ID}"
         fi
 
-        # Sanitize any bad characters
+        # Sanitize: only allow alphanumerics, ., _, or -
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
-        echo "Using tag: $TAG"
+        echo "Using image tag: $TAG"
   build:
     commands:
       - |
