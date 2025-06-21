@@ -14,7 +14,7 @@ phases:
       - "echo Repository name: $REPO_NAME"
       - TIMESTAMP=$(date +%Y%m%d%H%M%S)
       - echo Extracting branch info...
-      - if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" ]]; then BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||'); elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then BRANCH_NAME=$CODEBUILD_GIT_BRANCH; elif [[ -f "/codebuild/output/src*/src/.git/HEAD" ]]; then BRANCH_NAME=$(cat /codebuild/output/src*/src/.git/HEAD | sed 's|ref: refs/heads/||'); else BRANCH_NAME=${BRANCH_NAME:-"pipeline"}; fi
+      - "if [[ -n '$CODEBUILD_WEBHOOK_HEAD_REF' ]]; then BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||'); elif [[ -n '$CODEBUILD_GIT_BRANCH' ]]; then BRANCH_NAME=$CODEBUILD_GIT_BRANCH; elif [[ -f '/codebuild/output/src*/src/.git/HEAD' ]]; then BRANCH_NAME=$(cat /codebuild/output/src*/src/.git/HEAD | sed 's|ref: refs/heads/||'); else BRANCH_NAME=${BRANCH_NAME:-'pipeline'}; fi"
       - "echo Detected branch: $BRANCH_NAME"
       - echo Handling branch patterns...
       - if [[ "$BRANCH_NAME" == feature/* ]]; then FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}'); TAG="${FEATURE_NAME}-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "develop" ]]; then TAG="develop-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == "main" ]]; then TAG="main-${TIMESTAMP}"; elif [[ "$BRANCH_NAME" == release/* ]]; then SEMVER=$(echo $BRANCH_NAME | sed 's|release/||'); TAG="${SEMVER}-${TIMESTAMP}"; RELEASE_TAG="${SEMVER}"; IS_RELEASE=true; else TAG="build-${TIMESTAMP}"; fi
@@ -25,7 +25,7 @@ phases:
     commands:
       - echo Building the Docker image...
       - echo Checking for Dockerfile...
-      - if [[ ! -f "Dockerfile" ]]; then if [[ -f "containers/Dockerfile" ]]; then DOCKERFILE_PATH="containers/Dockerfile"; else echo "ERROR: No Dockerfile found"; exit 1; fi; else DOCKERFILE_PATH="Dockerfile"; fi
+      - "if [[ ! -f 'Dockerfile' ]]; then if [[ -f 'containers/Dockerfile' ]]; then DOCKERFILE_PATH='containers/Dockerfile'; else echo 'ERROR: No Dockerfile found'; exit 1; fi; else DOCKERFILE_PATH='Dockerfile'; fi
       - docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
       - docker tag $REPO_URI:$TAG $REPO_URI:latest
       - echo Successfully built image $REPO_URI:$TAG
