@@ -1,0 +1,559 @@
+[Container] 2025/06/21 17:03:55.583100 Running on CodeBuild On-demand
+[Container] 2025/06/21 17:03:55.583113 Waiting for agent ping
+[Container] 2025/06/21 17:03:55.684130 Waiting for DOWNLOAD_SOURCE
+[Container] 2025/06/21 17:03:57.265086 Phase is DOWNLOAD_SOURCE
+[Container] 2025/06/21 17:03:57.268145 CODEBUILD_SRC_DIR=/codebuild/output/src70729039/src
+[Container] 2025/06/21 17:03:57.268713 YAML location is /codebuild/output/src70729039/src/buildspec.yml
+[Container] 2025/06/21 17:03:57.270779 Setting HTTP client timeout to higher timeout for S3 source
+[Container] 2025/06/21 17:03:57.270922 Processing environment variables
+[Container] 2025/06/21 17:03:57.422577 No runtime version selected in buildspec.
+[Container] 2025/06/21 17:03:57.455530 Moving to directory /codebuild/output/src70729039/src
+[Container] 2025/06/21 17:03:57.455554 Cache is not defined in the buildspec
+[Container] 2025/06/21 17:03:57.495400 Skip cache due to: no paths specified to be cached
+[Container] 2025/06/21 17:03:57.495868 Registering with agent
+[Container] 2025/06/21 17:03:57.529964 Phases found in YAML: 3
+[Container] 2025/06/21 17:03:57.529985  PRE_BUILD: 4 commands
+[Container] 2025/06/21 17:03:57.529990  BUILD: 4 commands
+[Container] 2025/06/21 17:03:57.529995  POST_BUILD: 6 commands
+[Container] 2025/06/21 17:03:57.530355 Phase complete: DOWNLOAD_SOURCE State: SUCCEEDED
+[Container] 2025/06/21 17:03:57.530375 Phase context status code:  Message: 
+[Container] 2025/06/21 17:03:57.601245 Entering phase INSTALL
+[Container] 2025/06/21 17:03:57.638968 Phase complete: INSTALL State: SUCCEEDED
+[Container] 2025/06/21 17:03:57.638989 Phase context status code:  Message: 
+[Container] 2025/06/21 17:03:57.671903 Entering phase PRE_BUILD
+[Container] 2025/06/21 17:03:57.703866 Running command echo "Logging in to Amazon ECR..."
+Logging in to Amazon ECR...
+
+[Container] 2025/06/21 17:03:57.711894 Running command aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
+WARNING! Your password will be stored unencrypted in /root/.docker/config.json.
+Configure a credential helper to remove this warning. See
+https://docs.docker.com/engine/reference/commandline/login/#credential-stores
+
+Login Succeeded
+
+[Container] 2025/06/21 17:04:08.392187 Running command BUILD_SHORT=$(echo ${CODEBUILD_BUILD_ID} | cut -c1-5)
+
+[Container] 2025/06/21 17:04:08.487755 Running command # Print all relevant environment variables for debugging
+echo "CODEBUILD_WEBHOOK_HEAD_REF=$CODEBUILD_WEBHOOK_HEAD_REF"
+echo "CODEBUILD_SOURCE_VERSION=$CODEBUILD_SOURCE_VERSION"
+echo "CODEBUILD_WEBHOOK_BASE_REF=$CODEBUILD_WEBHOOK_BASE_REF"
+echo "CODEBUILD_WEBHOOK_EVENT=$CODEBUILD_WEBHOOK_EVENT"
+echo "BUILD_SHORT=$BUILD_SHORT"
+
+# Improved branch detection
+if [[ -n "$CODEBUILD_WEBHOOK_HEAD_REF" && "$CODEBUILD_WEBHOOK_HEAD_REF" == refs/heads/* ]]; then
+  # Extract branch name from refs/heads/...
+  BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | sed 's|refs/heads/||')
+elif [[ -n "$CODEBUILD_GIT_BRANCH" ]]; then
+  # Use CODEBUILD_GIT_BRANCH if available
+  BRANCH_NAME=$CODEBUILD_GIT_BRANCH
+else
+  # Fallback to source version
+  BRANCH_NAME=$CODEBUILD_SOURCE_VERSION
+fi
+
+# Trim whitespace
+BRANCH_NAME=$(echo "$BRANCH_NAME" | xargs)
+
+echo "Detected branch name: '$BRANCH_NAME'"
+
+# Handle different branch patterns with more explicit condition checks
+if [[ "$BRANCH_NAME" == feature/* ]]; then
+  echo "Matched feature branch pattern"
+  FEATURE_NAME=$(echo $BRANCH_NAME | awk -F'/' '{print $NF}')
+  TAG="${FEATURE_NAME}-${BUILD_SHORT}"
+  
+elif [[ "$BRANCH_NAME" == "develop" ]]; then
+  echo "Matched develop branch pattern"
+  TAG="develop-${BUILD_SHORT}"
+  
+elif [[ "$BRANCH_NAME" == "main" ]]; then
+  echo "Matched main branch pattern"
+  TAG="main-${BUILD_SHORT}"
+  
+elif [[ "$BRANCH_NAME" == release/* ]]; then
+  echo "Matched release branch pattern"
+  SEMVER=$(echo $BRANCH_NAME | sed 's|release/||')
+  TAG="${SEMVER}-${BUILD_SHORT}"
+  RELEASE_TAG="${SEMVER}"
+  IS_RELEASE=true
+  
+else
+  echo "No pattern matched, using default"
+  TAG="build-${BUILD_SHORT}"
+fi
+
+# Ensure tag is valid for Docker (alphanumeric, underscore, hyphen only)
+TAG=$(echo $TAG | sed 's/[^a-zA-Z0-9_.-]/-/g')
+
+echo "Using tag: $TAG"
+
+CODEBUILD_WEBHOOK_HEAD_REF=
+CODEBUILD_SOURCE_VERSION=arn:aws:s3:::codepipeline-us-east-1-feec1601b30d-4a17-85f4-300bb695cfa3/gene-annotator/SourceArti/xGfBXGk
+CODEBUILD_WEBHOOK_BASE_REF=
+CODEBUILD_WEBHOOK_EVENT=
+BUILD_SHORT=gene-
+Detected branch name: 'arn:aws:s3:::codepipeline-us-east-1-feec1601b30d-4a17-85f4-300bb695cfa3/gene-annotator/SourceArti/xGfBXGk'
+No pattern matched, using default
+Using tag: build-gene-
+
+[Container] 2025/06/21 17:04:08.646410 Phase complete: PRE_BUILD State: SUCCEEDED
+[Container] 2025/06/21 17:04:08.646432 Phase context status code:  Message: 
+[Container] 2025/06/21 17:04:08.689722 Entering phase BUILD
+[Container] 2025/06/21 17:04:08.690894 Running command echo "Building the Docker image..."
+Building the Docker image...
+
+[Container] 2025/06/21 17:04:08.699004 Running command docker build -f Dockerfile -t $REPO_URI:$TAG .
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile: 1.17kB done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/python:slim
+#2 DONE 0.3s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.0s
+
+#4 [ 1/13] FROM docker.io/library/python:slim@sha256:f2fdaec50160418e0c2867ba3e254755edd067171725886d5d303fd7057bbf81
+#4 resolve docker.io/library/python:slim@sha256:f2fdaec50160418e0c2867ba3e254755edd067171725886d5d303fd7057bbf81 0.0s done
+#4 sha256:f2fdaec50160418e0c2867ba3e254755edd067171725886d5d303fd7057bbf81 9.12kB / 9.12kB done
+#4 sha256:83c04b3d51c2150e7d23f6f2911059e7f1a5a4ff8870ef6eb7d4ea4ac6b49638 1.75kB / 1.75kB done
+#4 sha256:300924e3c7dee0d9e5c0857959da75fae51df8bc0cbbdf18e774e559fe663d85 5.43kB / 5.43kB done
+#4 sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8 4.19MB / 28.23MB 0.1s
+#4 sha256:3863f37a3fcce56e282a3f78dc1bf388702d64f5029347a15a73469ba7f8db57 3.51MB / 3.51MB 0.1s done
+#4 sha256:a8e2af0d1f71d3db4982aee54fa11ce2d94ff605d43ab42307b98d7f85d39e83 2.10MB / 12.58MB 0.1s
+#4 sha256:ef7ba5114170ff93d80a2bd36fc356a0c6c61949724abefea088c6b2aeea5e68 0B / 251B 0.1s
+#4 sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8 14.68MB / 28.23MB 0.2s
+#4 sha256:ef7ba5114170ff93d80a2bd36fc356a0c6c61949724abefea088c6b2aeea5e68 251B / 251B 0.1s done
+#4 sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8 25.17MB / 28.23MB 0.3s
+#4 sha256:a8e2af0d1f71d3db4982aee54fa11ce2d94ff605d43ab42307b98d7f85d39e83 12.58MB / 12.58MB 0.2s done
+#4 sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8 28.23MB / 28.23MB 0.3s done
+#4 extracting sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8
+#4 ...
+
+#5 [internal] load build context
+#5 transferring context: 92.33MB 0.7s done
+#5 DONE 0.7s
+
+#4 [ 1/13] FROM docker.io/library/python:slim@sha256:f2fdaec50160418e0c2867ba3e254755edd067171725886d5d303fd7057bbf81
+#4 extracting sha256:dad67da3f26bce15939543965e09c4059533b025f707aad72ed3d3f3a09c66f8 1.2s done
+#4 extracting sha256:3863f37a3fcce56e282a3f78dc1bf388702d64f5029347a15a73469ba7f8db57
+#4 extracting sha256:3863f37a3fcce56e282a3f78dc1bf388702d64f5029347a15a73469ba7f8db57 0.1s done
+#4 extracting sha256:a8e2af0d1f71d3db4982aee54fa11ce2d94ff605d43ab42307b98d7f85d39e83 0.1s
+#4 extracting sha256:a8e2af0d1f71d3db4982aee54fa11ce2d94ff605d43ab42307b98d7f85d39e83 0.5s done
+#4 extracting sha256:ef7ba5114170ff93d80a2bd36fc356a0c6c61949724abefea088c6b2aeea5e68 done
+#4 DONE 2.6s
+
+#6 [ 2/13] WORKDIR /opt/pipeline
+#6 DONE 0.7s
+
+#7 [ 3/13] COPY ./requirements.txt /opt/pipeline
+#7 DONE 0.1s
+
+#8 [ 4/13] RUN pip install --upgrade pip && pip install -r requirements.txt
+#8 1.837 Requirement already satisfied: pip in /usr/local/lib/python3.13/site-packages (25.1.1)
+#8 1.946 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#8 2.581 Collecting alembic==1.15.2 (from -r requirements.txt (line 1))
+#8 2.629   Downloading alembic-1.15.2-py3-none-any.whl.metadata (7.3 kB)
+#8 2.651 Collecting asttokens==3.0.0 (from -r requirements.txt (line 2))
+#8 2.655   Downloading asttokens-3.0.0-py3-none-any.whl.metadata (4.7 kB)
+#8 2.677 Collecting babel==2.17.0 (from -r requirements.txt (line 3))
+#8 2.681   Downloading babel-2.17.0-py3-none-any.whl.metadata (2.0 kB)
+#8 2.746 Collecting black==24.10.0 (from -r requirements.txt (line 4))
+#8 2.752   Downloading black-24.10.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl.metadata (79 kB)
+#8 2.791 Collecting blinker==1.9.0 (from -r requirements.txt (line 5))
+#8 2.795   Downloading blinker-1.9.0-py3-none-any.whl.metadata (1.6 kB)
+#8 3.091 Collecting boto3==1.35.76 (from -r requirements.txt (line 6))
+#8 3.101   Downloading boto3-1.35.76-py3-none-any.whl.metadata (6.7 kB)
+#8 3.445 Collecting botocore==1.35.76 (from -r requirements.txt (line 7))
+#8 3.449   Downloading botocore-1.35.76-py3-none-any.whl.metadata (5.7 kB)
+#8 3.475 Collecting certifi==2025.4.26 (from -r requirements.txt (line 8))
+#8 3.482   Downloading certifi-2025.4.26-py3-none-any.whl.metadata (2.5 kB)
+#8 3.583 Collecting charset-normalizer==3.4.2 (from -r requirements.txt (line 9))
+#8 3.588   Downloading charset_normalizer-3.4.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (35 kB)
+#8 3.621 Collecting click==8.1.7 (from -r requirements.txt (line 10))
+#8 3.624   Downloading click-8.1.7-py3-none-any.whl.metadata (3.0 kB)
+#8 3.645 Collecting decorator==5.1.1 (from -r requirements.txt (line 11))
+#8 3.650   Downloading decorator-5.1.1-py3-none-any.whl.metadata (4.0 kB)
+#8 3.670 Collecting dnspython==2.7.0 (from -r requirements.txt (line 12))
+#8 3.673   Downloading dnspython-2.7.0-py3-none-any.whl.metadata (5.8 kB)
+#8 3.695 Collecting ecdsa==0.19.1 (from -r requirements.txt (line 13))
+#8 3.698   Downloading ecdsa-0.19.1-py2.py3-none-any.whl.metadata (29 kB)
+#8 3.721 Collecting elastic-transport==8.17.1 (from -r requirements.txt (line 14))
+#8 3.724   Downloading elastic_transport-8.17.1-py3-none-any.whl.metadata (3.8 kB)
+#8 3.777 Collecting elasticsearch<9,>=8 (from -r requirements.txt (line 15))
+#8 3.782   Downloading elasticsearch-8.18.1-py3-none-any.whl.metadata (9.2 kB)
+#8 3.809 Collecting email_validator==2.2.0 (from -r requirements.txt (line 16))
+#8 3.813   Downloading email_validator-2.2.0-py3-none-any.whl.metadata (25 kB)
+#8 3.833 Collecting executing==2.1.0 (from -r requirements.txt (line 17))
+#8 3.839   Downloading executing-2.1.0-py2.py3-none-any.whl.metadata (8.9 kB)
+#8 3.864 Collecting Flask==3.1.0 (from -r requirements.txt (line 18))
+#8 3.867   Downloading flask-3.1.0-py3-none-any.whl.metadata (2.7 kB)
+#8 3.885 Collecting flask-babel==4.0.0 (from -r requirements.txt (line 19))
+#8 3.889   Downloading flask_babel-4.0.0-py3-none-any.whl.metadata (1.9 kB)
+#8 3.907 Collecting Flask-Login==0.6.3 (from -r requirements.txt (line 20))
+#8 3.911   Downloading Flask_Login-0.6.3-py3-none-any.whl.metadata (5.8 kB)
+#8 3.929 Collecting Flask-Mail==0.10.0 (from -r requirements.txt (line 21))
+#8 3.934   Downloading flask_mail-0.10.0-py3-none-any.whl.metadata (2.1 kB)
+#8 3.959 Collecting Flask-Migrate==4.1.0 (from -r requirements.txt (line 22))
+#8 3.965   Downloading Flask_Migrate-4.1.0-py3-none-any.whl.metadata (3.3 kB)
+#8 3.986 Collecting Flask-Moment==1.0.6 (from -r requirements.txt (line 23))
+#8 3.990   Downloading Flask_Moment-1.0.6-py3-none-any.whl.metadata (1.4 kB)
+#8 4.010 Collecting Flask-SQLAlchemy==3.1.1 (from -r requirements.txt (line 24))
+#8 4.013   Downloading flask_sqlalchemy-3.1.1-py3-none-any.whl.metadata (3.4 kB)
+#8 4.037 Collecting Flask-WTF==1.2.2 (from -r requirements.txt (line 25))
+#8 4.043   Downloading flask_wtf-1.2.2-py3-none-any.whl.metadata (3.4 kB)
+#8 4.063 Collecting idna==3.10 (from -r requirements.txt (line 26))
+#8 4.066   Downloading idna-3.10-py3-none-any.whl.metadata (10 kB)
+#8 4.083 Collecting iniconfig==2.1.0 (from -r requirements.txt (line 27))
+#8 4.087   Downloading iniconfig-2.1.0-py3-none-any.whl.metadata (2.7 kB)
+#8 4.135 Collecting ipython==8.30.0 (from -r requirements.txt (line 28))
+#8 4.139   Downloading ipython-8.30.0-py3-none-any.whl.metadata (4.9 kB)
+#8 4.165 Collecting itsdangerous==2.2.0 (from -r requirements.txt (line 29))
+#8 4.169   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+#8 4.188 Collecting jedi==0.19.2 (from -r requirements.txt (line 30))
+#8 4.192   Downloading jedi-0.19.2-py2.py3-none-any.whl.metadata (22 kB)
+#8 4.219 Collecting Jinja2==3.1.5 (from -r requirements.txt (line 31))
+#8 4.223   Downloading jinja2-3.1.5-py3-none-any.whl.metadata (2.6 kB)
+#8 4.241 Collecting jmespath==1.0.1 (from -r requirements.txt (line 32))
+#8 4.245   Downloading jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+#8 4.261 Collecting langdetect==1.0.9 (from -r requirements.txt (line 33))
+#8 4.265   Downloading langdetect-1.0.9.tar.gz (981 kB)
+#8 4.281      ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 981.5/981.5 kB 64.9 MB/s eta 0:00:00
+#8 4.328   Installing build dependencies: started
+#8 5.185   Installing build dependencies: finished with status 'done'
+#8 5.186   Getting requirements to build wheel: started
+#8 5.582   Getting requirements to build wheel: finished with status 'done'
+#8 5.583   Preparing metadata (pyproject.toml): started
+#8 5.810   Preparing metadata (pyproject.toml): finished with status 'done'
+#8 5.828 Collecting Mako==1.3.10 (from -r requirements.txt (line 34))
+#8 5.832   Downloading mako-1.3.10-py3-none-any.whl.metadata (2.9 kB)
+#8 5.861 Collecting markdown-it-py==3.0.0 (from -r requirements.txt (line 35))
+#8 5.865   Downloading markdown_it_py-3.0.0-py3-none-any.whl.metadata (6.9 kB)
+#8 5.926 Collecting MarkupSafe==3.0.2 (from -r requirements.txt (line 36))
+#8 5.931   Downloading MarkupSafe-3.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.0 kB)
+#8 5.948 Collecting matplotlib-inline==0.1.7 (from -r requirements.txt (line 37))
+#8 5.952   Downloading matplotlib_inline-0.1.7-py3-none-any.whl.metadata (3.9 kB)
+#8 5.971 Collecting mdurl==0.1.2 (from -r requirements.txt (line 38))
+#8 5.974   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+#8 5.990 Collecting migrate==0.3.8 (from -r requirements.txt (line 39))
+#8 5.995   Downloading migrate-0.3.8.tar.gz (5.2 kB)
+#8 6.006   Installing build dependencies: started
+#8 6.761   Installing build dependencies: finished with status 'done'
+#8 6.762   Getting requirements to build wheel: started
+#8 7.146   Getting requirements to build wheel: finished with status 'done'
+#8 7.148   Preparing metadata (pyproject.toml): started
+#8 7.358   Preparing metadata (pyproject.toml): finished with status 'done'
+#8 7.370 Collecting mypy-extensions==1.0.0 (from -r requirements.txt (line 40))
+#8 7.374   Downloading mypy_extensions-1.0.0-py3-none-any.whl.metadata (1.1 kB)
+#8 7.561 Collecting numpy==2.2.0 (from -r requirements.txt (line 41))
+#8 7.568   Downloading numpy-2.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+#8 7.603 Collecting packaging==24.2 (from -r requirements.txt (line 42))
+#8 7.609   Downloading packaging-24.2-py3-none-any.whl.metadata (3.2 kB)
+#8 7.794 Collecting pandas==2.2.3 (from -r requirements.txt (line 43))
+#8 7.803   Downloading pandas-2.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (89 kB)
+#8 7.864 Collecting parso==0.8.4 (from -r requirements.txt (line 44))
+#8 7.868   Downloading parso-0.8.4-py2.py3-none-any.whl.metadata (7.7 kB)
+#8 7.888 Collecting pathspec==0.12.1 (from -r requirements.txt (line 45))
+#8 7.891   Downloading pathspec-0.12.1-py3-none-any.whl.metadata (21 kB)
+#8 7.910 Collecting pexpect==4.9.0 (from -r requirements.txt (line 46))
+#8 7.914   Downloading pexpect-4.9.0-py2.py3-none-any.whl.metadata (2.5 kB)
+#8 7.940 Collecting platformdirs==4.3.6 (from -r requirements.txt (line 47))
+#8 7.944   Downloading platformdirs-4.3.6-py3-none-any.whl.metadata (11 kB)
+#8 7.966 Collecting pluggy==1.5.0 (from -r requirements.txt (line 48))
+#8 7.970   Downloading pluggy-1.5.0-py3-none-any.whl.metadata (4.8 kB)
+#8 8.007 Collecting prompt_toolkit==3.0.48 (from -r requirements.txt (line 49))
+#8 8.011   Downloading prompt_toolkit-3.0.48-py3-none-any.whl.metadata (6.4 kB)
+#8 8.027 Collecting ptyprocess==0.7.0 (from -r requirements.txt (line 50))
+#8 8.031   Downloading ptyprocess-0.7.0-py2.py3-none-any.whl.metadata (1.3 kB)
+#8 8.049 Collecting pure_eval==0.2.3 (from -r requirements.txt (line 51))
+#8 8.053   Downloading pure_eval-0.2.3-py3-none-any.whl.metadata (6.3 kB)
+#8 8.079 Collecting Pygments==2.18.0 (from -r requirements.txt (line 52))
+#8 8.090   Downloading pygments-2.18.0-py3-none-any.whl.metadata (2.5 kB)
+#8 8.116 Collecting PyJWT==2.10.1 (from -r requirements.txt (line 53))
+#8 8.120   Downloading PyJWT-2.10.1-py3-none-any.whl.metadata (4.0 kB)
+#8 8.169 Collecting pytest==8.3.5 (from -r requirements.txt (line 54))
+#8 8.173   Downloading pytest-8.3.5-py3-none-any.whl.metadata (7.6 kB)
+#8 8.195 Collecting python-dateutil==2.9.0.post0 (from -r requirements.txt (line 55))
+#8 8.198   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+#8 8.221 Collecting python-dotenv==1.1.0 (from -r requirements.txt (line 56))
+#8 8.225   Downloading python_dotenv-1.1.0-py3-none-any.whl.metadata (24 kB)
+#8 8.246 Collecting python-http-client==3.3.7 (from -r requirements.txt (line 57))
+#8 8.249   Downloading python_http_client-3.3.7-py3-none-any.whl.metadata (6.9 kB)
+#8 8.293 Collecting pytz==2024.2 (from -r requirements.txt (line 58))
+#8 8.298   Downloading pytz-2024.2-py2.py3-none-any.whl.metadata (22 kB)
+#8 8.343 Collecting requests==2.32.3 (from -r requirements.txt (line 59))
+#8 8.349   Downloading requests-2.32.3-py3-none-any.whl.metadata (4.6 kB)
+#8 8.395 Collecting rich==13.9.4 (from -r requirements.txt (line 60))
+#8 8.399   Downloading rich-13.9.4-py3-none-any.whl.metadata (18 kB)
+#8 8.425 Collecting s3transfer==0.10.4 (from -r requirements.txt (line 61))
+#8 8.429   Downloading s3transfer-0.10.4-py3-none-any.whl.metadata (1.7 kB)
+#8 8.464 Collecting sendgrid==6.12.2 (from -r requirements.txt (line 62))
+#8 8.469   Downloading sendgrid-6.12.2-py3-none-any.whl.metadata (12 kB)
+#8 8.591 Collecting setuptools==75.1.0 (from -r requirements.txt (line 63))
+#8 8.597   Downloading setuptools-75.1.0-py3-none-any.whl.metadata (6.9 kB)
+#8 8.629 Collecting shellingham==1.5.4 (from -r requirements.txt (line 64))
+#8 8.632   Downloading shellingham-1.5.4-py2.py3-none-any.whl.metadata (3.5 kB)
+#8 8.651 Collecting six==1.17.0 (from -r requirements.txt (line 65))
+#8 8.655   Downloading six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+#8 8.975 Collecting SQLAlchemy==2.0.38 (from -r requirements.txt (line 66))
+#8 8.981   Downloading SQLAlchemy-2.0.38-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (9.6 kB)
+#8 9.014 Collecting stack-data==0.6.3 (from -r requirements.txt (line 67))
+#8 9.017   Downloading stack_data-0.6.3-py3-none-any.whl.metadata (18 kB)
+#8 9.042 Collecting traitlets==5.14.3 (from -r requirements.txt (line 68))
+#8 9.046   Downloading traitlets-5.14.3-py3-none-any.whl.metadata (10 kB)
+#8 9.074 Collecting typer==0.15.1 (from -r requirements.txt (line 69))
+#8 9.079   Downloading typer-0.15.1-py3-none-any.whl.metadata (15 kB)
+#8 9.103 Collecting typing_extensions==4.12.2 (from -r requirements.txt (line 70))
+#8 9.106   Downloading typing_extensions-4.12.2-py3-none-any.whl.metadata (3.0 kB)
+#8 9.133 Collecting tzdata==2024.2 (from -r requirements.txt (line 71))
+#8 9.137   Downloading tzdata-2024.2-py2.py3-none-any.whl.metadata (1.4 kB)
+#8 9.168 Collecting urllib3==2.2.3 (from -r requirements.txt (line 72))
+#8 9.172   Downloading urllib3-2.2.3-py3-none-any.whl.metadata (6.5 kB)
+#8 9.196 Collecting wcwidth==0.2.13 (from -r requirements.txt (line 73))
+#8 9.199   Downloading wcwidth-0.2.13-py2.py3-none-any.whl.metadata (14 kB)
+#8 9.229 Collecting Werkzeug==3.1.3 (from -r requirements.txt (line 74))
+#8 9.233   Downloading werkzeug-3.1.3-py3-none-any.whl.metadata (3.7 kB)
+#8 9.259 Collecting wheel==0.44.0 (from -r requirements.txt (line 75))
+#8 9.264   Downloading wheel-0.44.0-py3-none-any.whl.metadata (2.3 kB)
+#8 9.283 Collecting WTForms==3.2.1 (from -r requirements.txt (line 76))
+#8 9.287   Downloading wtforms-3.2.1-py3-none-any.whl.metadata (5.3 kB)
+#8 10.20 Collecting greenlet!=0.4.17 (from SQLAlchemy==2.0.38->-r requirements.txt (line 66))
+#8 10.20   Downloading greenlet-3.2.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+#8 10.27 Downloading alembic-1.15.2-py3-none-any.whl (231 kB)
+#8 10.28 Downloading asttokens-3.0.0-py3-none-any.whl (26 kB)
+#8 10.29 Downloading babel-2.17.0-py3-none-any.whl (10.2 MB)
+#8 10.34    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 10.2/10.2 MB 208.3 MB/s eta 0:00:00
+#8 10.35 Downloading black-24.10.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.manylinux_2_28_x86_64.whl (1.8 MB)
+#8 10.37    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 116.4 MB/s eta 0:00:00
+#8 10.37 Downloading blinker-1.9.0-py3-none-any.whl (8.5 kB)
+#8 10.38 Downloading boto3-1.35.76-py3-none-any.whl (139 kB)
+#8 10.39 Downloading botocore-1.35.76-py3-none-any.whl (13.2 MB)
+#8 10.46    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 13.2/13.2 MB 193.3 MB/s eta 0:00:00
+#8 10.46 Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+#8 10.48 Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+#8 10.49 Downloading s3transfer-0.10.4-py3-none-any.whl (83 kB)
+#8 10.50 Downloading urllib3-2.2.3-py3-none-any.whl (126 kB)
+#8 10.51 Downloading certifi-2025.4.26-py3-none-any.whl (159 kB)
+#8 10.52 Downloading charset_normalizer-3.4.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (148 kB)
+#8 10.54 Downloading click-8.1.7-py3-none-any.whl (97 kB)
+#8 10.54 Downloading decorator-5.1.1-py3-none-any.whl (9.1 kB)
+#8 10.55 Downloading dnspython-2.7.0-py3-none-any.whl (313 kB)
+#8 10.56 Downloading ecdsa-0.19.1-py2.py3-none-any.whl (150 kB)
+#8 10.57 Downloading elastic_transport-8.17.1-py3-none-any.whl (64 kB)
+#8 10.58 Downloading email_validator-2.2.0-py3-none-any.whl (33 kB)
+#8 10.59 Downloading executing-2.1.0-py2.py3-none-any.whl (25 kB)
+#8 10.60 Downloading flask-3.1.0-py3-none-any.whl (102 kB)
+#8 10.61 Downloading flask_babel-4.0.0-py3-none-any.whl (9.6 kB)
+#8 10.62 Downloading Flask_Login-0.6.3-py3-none-any.whl (17 kB)
+#8 10.63 Downloading flask_mail-0.10.0-py3-none-any.whl (8.5 kB)
+#8 10.64 Downloading Flask_Migrate-4.1.0-py3-none-any.whl (21 kB)
+#8 10.65 Downloading Flask_Moment-1.0.6-py3-none-any.whl (6.2 kB)
+#8 10.66 Downloading flask_sqlalchemy-3.1.1-py3-none-any.whl (25 kB)
+#8 10.67 Downloading flask_wtf-1.2.2-py3-none-any.whl (12 kB)
+#8 10.67 Downloading idna-3.10-py3-none-any.whl (70 kB)
+#8 10.68 Downloading iniconfig-2.1.0-py3-none-any.whl (6.0 kB)
+#8 10.69 Downloading ipython-8.30.0-py3-none-any.whl (820 kB)
+#8 10.70    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 820.8/820.8 kB 62.8 MB/s eta 0:00:00
+#8 10.71 Downloading prompt_toolkit-3.0.48-py3-none-any.whl (386 kB)
+#8 10.72 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+#8 10.73 Downloading jedi-0.19.2-py2.py3-none-any.whl (1.6 MB)
+#8 10.74    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.6/1.6 MB 124.0 MB/s eta 0:00:00
+#8 10.75 Downloading parso-0.8.4-py2.py3-none-any.whl (103 kB)
+#8 10.76 Downloading jinja2-3.1.5-py3-none-any.whl (134 kB)
+#8 10.76 Downloading mako-1.3.10-py3-none-any.whl (78 kB)
+#8 10.77 Downloading markdown_it_py-3.0.0-py3-none-any.whl (87 kB)
+#8 10.78 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+#8 10.79 Downloading MarkupSafe-3.0.2-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (23 kB)
+#8 10.80 Downloading matplotlib_inline-0.1.7-py3-none-any.whl (9.9 kB)
+#8 10.81 Downloading mypy_extensions-1.0.0-py3-none-any.whl (4.7 kB)
+#8 10.82 Downloading numpy-2.2.0-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.1 MB)
+#8 10.90    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 16.1/16.1 MB 198.3 MB/s eta 0:00:00
+#8 10.91 Downloading packaging-24.2-py3-none-any.whl (65 kB)
+#8 10.92 Downloading pandas-2.2.3-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (12.7 MB)
+#8 10.98    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.7/12.7 MB 218.2 MB/s eta 0:00:00
+#8 10.98 Downloading pathspec-0.12.1-py3-none-any.whl (31 kB)
+#8 10.99 Downloading pexpect-4.9.0-py2.py3-none-any.whl (63 kB)
+#8 11.00 Downloading platformdirs-4.3.6-py3-none-any.whl (18 kB)
+#8 11.01 Downloading pluggy-1.5.0-py3-none-any.whl (20 kB)
+#8 11.02 Downloading ptyprocess-0.7.0-py2.py3-none-any.whl (13 kB)
+#8 11.03 Downloading pure_eval-0.2.3-py3-none-any.whl (11 kB)
+#8 11.04 Downloading pygments-2.18.0-py3-none-any.whl (1.2 MB)
+#8 11.05    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 88.9 MB/s eta 0:00:00
+#8 11.06 Downloading PyJWT-2.10.1-py3-none-any.whl (22 kB)
+#8 11.07 Downloading pytest-8.3.5-py3-none-any.whl (343 kB)
+#8 11.08 Downloading python_dotenv-1.1.0-py3-none-any.whl (20 kB)
+#8 11.09 Downloading python_http_client-3.3.7-py3-none-any.whl (8.4 kB)
+#8 11.10 Downloading pytz-2024.2-py2.py3-none-any.whl (508 kB)
+#8 11.11 Downloading requests-2.32.3-py3-none-any.whl (64 kB)
+#8 11.12 Downloading rich-13.9.4-py3-none-any.whl (242 kB)
+#8 11.13 Downloading sendgrid-6.12.2-py3-none-any.whl (102 kB)
+#8 11.15 Downloading setuptools-75.1.0-py3-none-any.whl (1.2 MB)
+#8 11.16    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 102.7 MB/s eta 0:00:00
+#8 11.16 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+#8 11.17 Downloading six-1.17.0-py2.py3-none-any.whl (11 kB)
+#8 11.19 Downloading SQLAlchemy-2.0.38-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.2 MB)
+#8 11.21    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.2/3.2 MB 144.1 MB/s eta 0:00:00
+#8 11.21 Downloading stack_data-0.6.3-py3-none-any.whl (24 kB)
+#8 11.22 Downloading traitlets-5.14.3-py3-none-any.whl (85 kB)
+#8 11.23 Downloading typer-0.15.1-py3-none-any.whl (44 kB)
+#8 11.24 Downloading typing_extensions-4.12.2-py3-none-any.whl (37 kB)
+#8 11.25 Downloading tzdata-2024.2-py2.py3-none-any.whl (346 kB)
+#8 11.26 Downloading wcwidth-0.2.13-py2.py3-none-any.whl (34 kB)
+#8 11.27 Downloading werkzeug-3.1.3-py3-none-any.whl (224 kB)
+#8 11.29 Downloading wheel-0.44.0-py3-none-any.whl (67 kB)
+#8 11.30 Downloading wtforms-3.2.1-py3-none-any.whl (152 kB)
+#8 11.31 Downloading elasticsearch-8.18.1-py3-none-any.whl (906 kB)
+#8 11.32    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 906.3/906.3 kB 60.9 MB/s eta 0:00:00
+#8 11.32 Downloading greenlet-3.2.3-cp313-cp313-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (608 kB)
+#8 11.34    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 608.4/608.4 kB 40.3 MB/s eta 0:00:00
+#8 11.61 Building wheels for collected packages: langdetect, migrate
+#8 11.62   Building wheel for langdetect (pyproject.toml): started
+#8 12.13   Building wheel for langdetect (pyproject.toml): finished with status 'done'
+#8 12.13   Created wheel for langdetect: filename=langdetect-1.0.9-py3-none-any.whl size=993332 sha256=9b16924cde8fff3099e2f47da793d59c3adbafcdf553ee8694c69fff8658d4ac
+#8 12.13   Stored in directory: /root/.cache/pip/wheels/eb/87/25/2dddf1c94e1786054e25022ec5530bfed52bad86d882999c48
+#8 12.14   Building wheel for migrate (pyproject.toml): started
+#8 12.41   Building wheel for migrate (pyproject.toml): finished with status 'done'
+#8 12.41   Created wheel for migrate: filename=migrate-0.3.8-py3-none-any.whl size=5701 sha256=d7b25d47b39866c677e09b92ca692fea58b0b93de91011e4e188ad7505050530
+#8 12.41   Stored in directory: /root/.cache/pip/wheels/f6/9c/e5/083c3811cad31e78cd63bfdfd5ab0944663dbd017aeae4a297
+#8 12.41 Successfully built langdetect migrate
+#8 12.60 Installing collected packages: wcwidth, pytz, pure_eval, ptyprocess, migrate, wheel, urllib3, tzdata, typing_extensions, traitlets, six, shellingham, setuptools, python-http-client, python-dotenv, PyJWT, Pygments, prompt_toolkit, pluggy, platformdirs, pexpect, pathspec, parso, packaging, numpy, mypy-extensions, mdurl, MarkupSafe, jmespath, itsdangerous, iniconfig, idna, greenlet, executing, dnspython, decorator, click, charset-normalizer, certifi, blinker, babel, asttokens, WTForms, Werkzeug, stack-data, SQLAlchemy, requests, python-dateutil, pytest, matplotlib-inline, markdown-it-py, Mako, langdetect, Jinja2, jedi, email_validator, elastic-transport, ecdsa, black, sendgrid, rich, pandas, ipython, Flask, elasticsearch, botocore, alembic, typer, s3transfer, Flask-WTF, Flask-SQLAlchemy, Flask-Moment, Flask-Mail, Flask-Login, flask-babel, Flask-Migrate, boto3
+#8 29.09 
+#8 29.10 Successfully installed Flask-3.1.0 Flask-Login-0.6.3 Flask-Mail-0.10.0 Flask-Migrate-4.1.0 Flask-Moment-1.0.6 Flask-SQLAlchemy-3.1.1 Flask-WTF-1.2.2 Jinja2-3.1.5 Mako-1.3.10 MarkupSafe-3.0.2 PyJWT-2.10.1 Pygments-2.18.0 SQLAlchemy-2.0.38 WTForms-3.2.1 Werkzeug-3.1.3 alembic-1.15.2 asttokens-3.0.0 babel-2.17.0 black-24.10.0 blinker-1.9.0 boto3-1.35.76 botocore-1.35.76 certifi-2025.4.26 charset-normalizer-3.4.2 click-8.1.7 decorator-5.1.1 dnspython-2.7.0 ecdsa-0.19.1 elastic-transport-8.17.1 elasticsearch-8.18.1 email_validator-2.2.0 executing-2.1.0 flask-babel-4.0.0 greenlet-3.2.3 idna-3.10 iniconfig-2.1.0 ipython-8.30.0 itsdangerous-2.2.0 jedi-0.19.2 jmespath-1.0.1 langdetect-1.0.9 markdown-it-py-3.0.0 matplotlib-inline-0.1.7 mdurl-0.1.2 migrate-0.3.8 mypy-extensions-1.0.0 numpy-2.2.0 packaging-24.2 pandas-2.2.3 parso-0.8.4 pathspec-0.12.1 pexpect-4.9.0 platformdirs-4.3.6 pluggy-1.5.0 prompt_toolkit-3.0.48 ptyprocess-0.7.0 pure_eval-0.2.3 pytest-8.3.5 python-dateutil-2.9.0.post0 python-dotenv-1.1.0 python-http-client-3.3.7 pytz-2024.2 requests-2.32.3 rich-13.9.4 s3transfer-0.10.4 sendgrid-6.12.2 setuptools-75.1.0 shellingham-1.5.4 six-1.17.0 stack-data-0.6.3 traitlets-5.14.3 typer-0.15.1 typing_extensions-4.12.2 tzdata-2024.2 urllib3-2.2.3 wcwidth-0.2.13 wheel-0.44.0
+#8 29.10 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#8 DONE 29.9s
+
+#9 [ 5/13] RUN pip install gunicorn pymysql cryptography
+#9 0.727 Collecting gunicorn
+#9 0.774   Downloading gunicorn-23.0.0-py3-none-any.whl.metadata (4.4 kB)
+#9 0.800 Collecting pymysql
+#9 0.804   Downloading PyMySQL-1.1.1-py3-none-any.whl.metadata (4.4 kB)
+#9 1.015 Collecting cryptography
+#9 1.020   Downloading cryptography-45.0.4-cp311-abi3-manylinux_2_34_x86_64.whl.metadata (5.7 kB)
+#9 1.030 Requirement already satisfied: packaging in /usr/local/lib/python3.13/site-packages (from gunicorn) (24.2)
+#9 1.145 Collecting cffi>=1.14 (from cryptography)
+#9 1.150   Downloading cffi-1.17.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (1.5 kB)
+#9 1.168 Collecting pycparser (from cffi>=1.14->cryptography)
+#9 1.171   Downloading pycparser-2.22-py3-none-any.whl.metadata (943 bytes)
+#9 1.182 Downloading gunicorn-23.0.0-py3-none-any.whl (85 kB)
+#9 1.199 Downloading PyMySQL-1.1.1-py3-none-any.whl (44 kB)
+#9 1.208 Downloading cryptography-45.0.4-cp311-abi3-manylinux_2_34_x86_64.whl (4.5 MB)
+#9 1.236    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 4.5/4.5 MB 188.3 MB/s eta 0:00:00
+#9 1.241 Downloading cffi-1.17.1-cp313-cp313-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (479 kB)
+#9 1.252 Downloading pycparser-2.22-py3-none-any.whl (117 kB)
+#9 1.387 Installing collected packages: pymysql, pycparser, gunicorn, cffi, cryptography
+#9 1.899 
+#9 1.908 Successfully installed cffi-1.17.1 cryptography-45.0.4 gunicorn-23.0.0 pycparser-2.22 pymysql-1.1.1
+#9 1.909 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+#9 DONE 2.2s
+
+#10 [ 6/13] COPY ./src ./src/
+#10 DONE 0.2s
+
+#11 [ 7/13] COPY migrations/ ./migrations
+#11 DONE 0.1s
+
+#12 [ 8/13] COPY boot.sh .flaskenv ./
+#12 DONE 0.1s
+
+#13 [ 9/13] COPY gene_annotate /opt/pipeline/
+#13 DONE 0.1s
+
+#14 [10/13] COPY test/ ./test/
+#14 DONE 0.1s
+
+#15 [11/13] RUN chmod a+x boot.sh
+#15 DONE 0.4s
+
+#16 [12/13] RUN chmod +x ./boot.sh /opt/pipeline/gene_annotate && ln -s /opt/pipeline/gene_annotate /usr/local/bin/gene_annotate
+#16 DONE 0.5s
+
+#17 [13/13] RUN flask translate compile
+#17 1.799 compiling catalog ./src/app/translations/es/LC_MESSAGES/messages.po to ./src/app/translations/es/LC_MESSAGES/messages.mo
+#17 DONE 2.2s
+
+#18 exporting to image
+#18 exporting layers
+#18 exporting layers 2.7s done
+#18 writing image sha256:94fad19c779f288245988db47d5ba74c1d3ff56ac34c6d6c3afe1bb42d21485f done
+#18 naming to 001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator:build-gene- done
+#18 DONE 2.7s
+
+[Container] 2025/06/21 17:04:51.322596 Running command docker tag $REPO_URI:$TAG $REPO_URI:latest
+
+[Container] 2025/06/21 17:04:51.350294 Running command if [[ "$IS_RELEASE" == "true" ]]; then
+  echo "Creating release tag $RELEASE_TAG"
+  docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG
+fi
+
+
+[Container] 2025/06/21 17:04:51.358219 Phase complete: BUILD State: SUCCEEDED
+[Container] 2025/06/21 17:04:51.358242 Phase context status code:  Message: 
+[Container] 2025/06/21 17:04:51.399522 Entering phase POST_BUILD
+[Container] 2025/06/21 17:04:51.400653 Running command echo "Pushing Docker images..."
+Pushing Docker images...
+
+[Container] 2025/06/21 17:04:51.408555 Running command docker push $REPO_URI:$TAG
+The push refers to repository [001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator]
+b356c9623fee: Preparing
+0a4505965bd4: Preparing
+064f80638131: Preparing
+99407d48c78c: Preparing
+94dc46583af7: Preparing
+fae649756c33: Preparing
+5a755654624c: Preparing
+5d8797ebeeaa: Preparing
+f8afb3882090: Preparing
+b91bca7e8c6f: Preparing
+515f3498bb31: Preparing
+333d3ef24557: Preparing
+d4eb1fe7417b: Preparing
+755063e06eb9: Preparing
+8d4a4dec3291: Preparing
+7fb72a7d1a8e: Preparing
+fae649756c33: Waiting
+5a755654624c: Waiting
+5d8797ebeeaa: Waiting
+f8afb3882090: Waiting
+b91bca7e8c6f: Waiting
+515f3498bb31: Waiting
+333d3ef24557: Waiting
+d4eb1fe7417b: Waiting
+755063e06eb9: Waiting
+8d4a4dec3291: Waiting
+7fb72a7d1a8e: Waiting
+064f80638131: Pushed
+94dc46583af7: Pushed
+0a4505965bd4: Pushed
+99407d48c78c: Pushed
+b356c9623fee: Pushed
+fae649756c33: Pushed
+5a755654624c: Pushed
+515f3498bb31: Pushed
+333d3ef24557: Pushed
+755063e06eb9: Layer already exists
+d4eb1fe7417b: Layer already exists
+8d4a4dec3291: Layer already exists
+f8afb3882090: Pushed
+5d8797ebeeaa: Pushed
+7fb72a7d1a8e: Pushed
+b91bca7e8c6f: Pushed
+tag invalid: The image tag 'build-gene-' already exists in the 'gene-annotator' repository and cannot be overwritten because the tag is immutable.
+
+[Container] 2025/06/21 17:05:10.509843 Command did not exit successfully docker push $REPO_URI:$TAG exit status 1
+[Container] 2025/06/21 17:05:10.516098 Phase complete: POST_BUILD State: FAILED
+[Container] 2025/06/21 17:05:10.516117 Phase context status code: COMMAND_EXECUTION_ERROR Message: Error while executing command: docker push $REPO_URI:$TAG. Reason: exit status 1
+[Container] 2025/06/21 17:05:10.612223 Set report auto-discover timeout to 5 seconds
+[Container] 2025/06/21 17:05:10.612301 Expanding base directory path:  .
+[Container] 2025/06/21 17:05:10.615964 Assembling file list
+[Container] 2025/06/21 17:05:10.615983 Expanding .
+[Container] 2025/06/21 17:05:10.619368 Expanding file paths for base directory .
+[Container] 2025/06/21 17:05:10.619384 Assembling file list
+[Container] 2025/06/21 17:05:10.619387 Expanding **/*
+[Container] 2025/06/21 17:05:10.623246 No matching auto-discover report paths found
+[Container] 2025/06/21 17:05:10.623271 Report auto-discover file discovery took 0.011048 seconds
+[Container] 2025/06/21 17:05:10.623283 Phase complete: UPLOAD_ARTIFACTS State: SUCCEEDED
+[Container] 2025/06/21 17:05:10.623292 Phase context status code:  Message: 
