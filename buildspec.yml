@@ -22,7 +22,7 @@ phases:
         # Figure out the branch from CodePipeline
         # CODEBUILD_SOURCE_VERSION is like "refs/heads/develop"
         BRANCH_NAME=${CODEBUILD_SOURCE_VERSION#refs/heads/}
-        echo "Detected branch: $BRANCH_NAME"
+        echo Detected branch: $BRANCH_NAME
 
         # Compute TAG (+ optional RELEASE_TAG)
         if [[ "$BRANCH_NAME" == feature/* ]]; then
@@ -43,7 +43,7 @@ phases:
 
         # Sanitize: only allow alphanumerics, ., _, or -
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
-        echo "Using image tag: $TAG"
+        echo Using image tag: $TAG
   build:
     commands:
       - |
@@ -61,7 +61,7 @@ phases:
         docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
         docker tag $REPO_URI:$TAG $REPO_URI:latest
 
-        echo "Successfully built image $REPO_URI:$TAG"
+        echo Successfully built image $REPO_URI:$TAG
         if [[ "$IS_RELEASE" == "true" ]]; then
           echo "Creating release tag $RELEASE_TAG"
           docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG
