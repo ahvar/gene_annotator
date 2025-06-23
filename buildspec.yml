@@ -10,46 +10,31 @@ phases:
     commands:
       - |
         set -euxo pipefail
-
-        echo "== Environment =="
-        echo "CODEBUILD_SOURCE_VERSION: $CODEBUILD_SOURCE_VERSION"
-        echo "CODEBUILD_BUILD_ID:       $CODEBUILD_BUILD_ID"
-
-        echo "== Logging into ECR =="
-        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
-
-        # Repo name for later API calls
-        REPO_NAME=${REPO_URI#*/}
-
-        # Short 5-char build suffix
+        echo "== Computing branch =="
+        if [[ -n "$BRANCH_NAME" ]]; then
+          BRANCH="$BRANCH_NAME"
+        elif [[ "$CODEBUILD_SOURCE_VERSION" == refs/heads/* ]]; then
+          BRANCH="${CODEBUILD_SOURCE_VERSION#refs/heads/}"
+        else
+          BRANCH=""
+        fi
         RAW_ID=${CODEBUILD_BUILD_ID##*:}
         SHORT_ID=${RAW_ID:0:5}
 
-        echo "== Computing branch/tag =="
-        # Strip refs/heads/ if present; else use as-is
-        if [[ "$CODEBUILD_SOURCE_VERSION" == refs/heads/* ]]; then
-          BRANCH_NAME=${CODEBUILD_SOURCE_VERSION#refs/heads/}
-        else
-          BRANCH_NAME=$CODEBUILD_SOURCE_VERSION
-        fi
-        echo "Determined branch: '$BRANCH_NAME'"
-
-        # tag logic
-        if [[ "$BRANCH_NAME" == feature/* ]]; then
-          FEATURE=${BRANCH_NAME##*/}
-          TAG="${FEATURE}-${SHORT_ID}"
-        elif [[ "$BRANCH_NAME" == develop ]]; then
-          TAG="develop-${SHORT_ID}"
-        elif [[ "$BRANCH_NAME" == main ]]; then
-          TAG="main-${SHORT_ID}"
-        elif [[ "$BRANCH_NAME" == release/* ]]; then
-          SEMVER=${BRANCH_NAME#release/}
-          TAG="${SEMVER}-${SHORT_ID}"
-          RELEASE_TAG=$SEMVER
-          IS_RELEASE=true
-        else
-          TAG="build-${SHORT_ID}"
-        fi
+        case "$BRANCH" in
+          develop)        TAG="develop-${SHORT_ID}" ;;
+          main)           TAG="main-${SHORT_ID}" ;;
+          feature/*)      TAG="${BRANCH##*/}-${SHORT_ID}" ;;
+          release/*)
+            SEMVER=${BRANCH#release/}
+            TAG="${SEMVER}-${SHORT_ID}"
+            RELEASE_TAG="$SEMVER"
+            IS_RELEASE=true
+            ;;
+          *)              TAG="build-${SHORT_ID}" ;;
+        esac
+        echo "Image tag will be '$TAG'"
+        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
 
         # remove illegal tag chars
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
@@ -58,48 +43,31 @@ phases:
   build:
     commands:
       - |
-        echo "Building the Docker image..."
-        # Pick the right Dockerfile
-        if [[ -f Dockerfile ]]; then
-          DOCKERFILE_PATH=Dockerfile
-        elif [[ -f containers/Dockerfile ]]; then
-          DOCKERFILE_PATH=containers/Dockerfile
-        else
-          echo "ERROR: No Dockerfile found"
-          exit 1
+        set -euxo pipefail
+        DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
+        docker build -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" .
+        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
+          docker tag "$REPO_URI:$TAG" "$REPO_URI:latest"
         fi
-
-        docker build -f $DOCKERFILE_PATH -t $REPO_URI:$TAG .
-        docker tag $REPO_URI:$TAG $REPO_URI:latest
-
-        echo Successfully built image $REPO_URI:$TAG
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          echo "Creating release tag $RELEASE_TAG"
-          docker tag $REPO_URI:$TAG $REPO_URI:$RELEASE_TAG
-        fi
+        [[ "$IS_RELEASE" == "true" ]] && docker tag "$REPO_URI:$TAG" "$REPO_URI:$RELEASE_TAG"
   post_build:
     commands:
       - |
-        echo "Pushing Docker images..."
-        docker push $REPO_URI:$TAG
+        set -euo pipefail
+        docker push "$REPO_URI:$TAG"
 
-        echo "Deleting existing latest tag if it exists"
-        aws ecr batch-delete-image --repository-name $REPO_NAME --image-ids imageTag=latest || true
-        docker push $REPO_URI:latest
-
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          echo "Pushing release tag $RELEASE_TAG"
-          docker push $REPO_URI:$RELEASE_TAG
+        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
+          echo "Updating latest tag"
+          aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest
+          docker push "$REPO_URI:latest"
         fi
 
-        aws ecr start-image-scan --repository-name $REPO_NAME --image-id imageTag=$TAG || true
-
-        echo "Writing imagedefinitions.json for ECS Deploy..."
         if [[ "$IS_RELEASE" == "true" ]]; then
-          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$RELEASE_TAG > imagedefinitions.json
-        else
-          printf '[{"name":"gene-annotator","imageUri":"%s"}]' $REPO_URI:$TAG > imagedefinitions.json
+          docker push "$REPO_URI:$RELEASE_TAG"
         fi
+
+        aws ecr start-image-scan --repository-name "${REPO_URI#*/}" --image-id imageTag="$TAG" || true
+        printf '[{"name":"gene-annotator","imageUri":"%s"}]' "$REPO_URI:$TAG" > imagedefinitions.json
 
 artifacts:
   files:
