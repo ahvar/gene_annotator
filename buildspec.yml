@@ -39,7 +39,8 @@ phases:
           *)              TAG="build-${SHORT_ID}" ;;
         esac
         echo "Image tag will be '$TAG'"
-        aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $REPO_URI
+        ACCOUNT_REGISTRY="${REPO_URI%%/*}" # 001570960384.dkr.ecr.us-east-1.amazonaws.com
+        aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_REGISTRY"
 
         # remove illegal tag chars
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
