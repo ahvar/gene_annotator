@@ -18,6 +18,11 @@ phases:
         else
           BRANCH=""
         fi
+
+        # --------- sanitize accidental shell quotes from overriding environment variables in CodePipeline ---- #
+        BRANCH=${BRANCH#\"}; BRANCH=${BRANCH%\"}
+        BRANCH=${BRANCH#\'}; BRANCH=${BRANCH%\'}
+
         RAW_ID=${CODEBUILD_BUILD_ID##*:}
         SHORT_ID=${RAW_ID:0:5}
 
