@@ -1,4 +1,4 @@
-FROM 001570960384.dkr.ecr.us-east-1.amazonaws.com/docker.io/library/python:slim
+FROM public.ecr.aws/docker/library/python:slim
 
 # Set environment variables
 ENV PYTHONPATH=/opt/pipeline:/opt/pipeline/src:/opt/pipeline/src/etl:/opt/pipeline/src/utils:/opt/pipeline/src/etl/data:/opt/pipeline/src/workflows:/opt/pipeline/src/modules:/opt/pipeline/test:/opt/pipeline/test/utils:/opt/pipeline/src/app:/opt/pipeline/src/app/models
