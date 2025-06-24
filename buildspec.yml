@@ -25,7 +25,7 @@ phases:
 
         RAW_ID=${CODEBUILD_BUILD_ID##*:}
         SHORT_ID=${RAW_ID:0:5}
-
+        IS_RELEASE=false
         case "$BRANCH" in
           develop)        TAG="develop-${SHORT_ID}" ;;
           main)           TAG="main-${SHORT_ID}" ;;
@@ -50,6 +50,7 @@ phases:
     commands:
       - |
         set -euxo pipefail
+        IS_RELEASE=${IS_RELEASE:-false}
         DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
         docker build -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" .
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
@@ -60,6 +61,7 @@ phases:
     commands:
       - |
         set -euo pipefail
+        IS_RELEASE=${IS_RELEASE:-false}
         docker push "$REPO_URI:$TAG"
 
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
