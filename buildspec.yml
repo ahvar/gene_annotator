@@ -44,7 +44,7 @@ phases:
         
         # Enable Buildx + QEMU for multi‑arch
         docker buildx install
-        docker run --privileged --rm tonistiigi/binfmt --install all
+        docker run --privileged --rm public.ecr.aws/tonistiigi/binfmt:latest --install all
         docker buildx create --name multiarch --use
 
         # remove illegal tag chars
