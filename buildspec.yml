@@ -41,6 +41,11 @@ phases:
         echo "Image tag will be '$TAG'"
         ACCOUNT_REGISTRY="${REPO_URI%%/*}" # 001570960384.dkr.ecr.us-east-1.amazonaws.com
         aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_REGISTRY"
+        
+        # Enable Buildx + QEMU for multi‑arch
+        docker buildx install
+        docker run --privileged --rm public.ecr.aws/tonistiigi/binfmt:latest --install all
+        docker buildx create --name multiarch --use
 
         # remove illegal tag chars
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
@@ -53,29 +58,30 @@ phases:
       - |
         set -euxo pipefail
         DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
-        docker build -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" .
+        
+        # -------- Delete previous 'latest' if we are about to push it -------- #
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
-          docker tag "$REPO_URI:$TAG" "$REPO_URI:latest"
+          echo "Deleting existing :latest tag (if any) to satisfy immutability policy"
+          aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
+        fi
+        # -------------------------------------------------------------------- #
+
+        EXTRA_TAGS=()
+        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
+          EXTRA_TAGS+=("-t" "$REPO_URI:latest")
         fi
         if [[ "$IS_RELEASE" == "true" ]]; then
-          docker tag "$REPO_URI:$TAG" "$REPO_URI:$RELEASE_TAG"
+          EXTRA_TAGS+=("-t" "$REPO_URI:$RELEASE_TAG")
         fi
+
+        # Build and PUSH a multi‑arch manifest (amd64+arm64) in one shot
+        docker buildx build --platform linux/amd64,linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" "${EXTRA_TAGS[@]}" --push .
+
+
   post_build:
     commands:
       - |
         set -euo pipefail
-        docker push "$REPO_URI:$TAG"
-
-        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
-          echo "Updating latest tag"
-          aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
-          docker push "$REPO_URI:latest"
-        fi
-
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          docker push "$REPO_URI:$RELEASE_TAG"
-        fi
-
         aws ecr start-image-scan --repository-name "${REPO_URI#*/}" --image-id imageTag="$TAG" || true
         printf '[{"name":"gene-annotator","imageUri":"%s"}]' "$REPO_URI:$TAG" > imagedefinitions.json
 
