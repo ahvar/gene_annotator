@@ -4,13 +4,14 @@ env:
   variables:
     AWS_DEFAULT_REGION: us-east-1
     REPO_URI: 001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator
+    BINFMT_URI: 001570960384.dkr.ecr.us-east-1.amazonaws.com/ci-binfmt:latest
 
 phases:
   pre_build:
     commands:
       - |
         set -euxo pipefail
-        echo "== Computing branch =="
+        echo "== branch -> tag =="
         if [[ -n "$BRANCH_NAME" ]]; then
           BRANCH="$BRANCH_NAME"
         elif [[ "$CODEBUILD_SOURCE_VERSION" == refs/heads/* ]]; then
@@ -39,19 +40,22 @@ phases:
           *)              TAG="build-${SHORT_ID}" ;;
         esac
         echo "Image tag will be '$TAG'"
+        export TAG IS_RELEASE RELEASE_TAG BRANCH
+
+        # ------------------------- ECR Login ------------------------------------------
         ACCOUNT_REGISTRY="${REPO_URI%%/*}" # 001570960384.dkr.ecr.us-east-1.amazonaws.com
         aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_REGISTRY"
+        # ------------------------------------------------------------------------------
         
-        # Enable Buildx + QEMU for multi‑arch
+        # ------------------- Enable buildx for ARM cross-build ------------------------
         docker buildx install
-        docker run --privileged --rm public.ecr.aws/tonistiigi/binfmt:latest --install all
-        docker buildx create --name multiarch --use
+        docker run --privileged --rm "$BINFMT_URI" --install all
+        docker buildx create --name arm --use
+        # ------------------------------------------------------------------------------
 
         # remove illegal tag chars
         TAG=${TAG//[^a-zA-Z0-9_.-]/-}
         echo "Using image tag: '$TAG'"
-
-        export TAG IS_RELEASE RELEASE_TAG BRANCH
 
   build:
     commands:
@@ -59,13 +63,14 @@ phases:
         set -euxo pipefail
         DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
         
-        # -------- Delete previous 'latest' if we are about to push it -------- #
+        # -------- Delete previous 'latest' if we are about to push it -------- 
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
           echo "Deleting existing :latest tag (if any) to satisfy immutability policy"
           aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
         fi
-        # -------------------------------------------------------------------- #
+        # -------------------------------------------------------------------- 
 
+        # ----------- Compose extra tag arrays -------------------------------- 
         EXTRA_TAGS=()
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
           EXTRA_TAGS+=("-t" "$REPO_URI:latest")
@@ -74,8 +79,9 @@ phases:
           EXTRA_TAGS+=("-t" "$REPO_URI:$RELEASE_TAG")
         fi
 
-        # Build and PUSH a multi‑arch manifest (amd64+arm64) in one shot
-        docker buildx build --platform linux/amd64,linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" "${EXTRA_TAGS[@]}" --push .
+        # --------------------- Build ARM64 ONLY and push --------------------------------
+        docker buildx build --platform linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" "${EXTRA_TAGS[@]}" --push .
+        # --------------------------------------------------------------------------------
 
 
   post_build:
