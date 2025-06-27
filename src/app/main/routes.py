@@ -1,4 +1,5 @@
 import logging
+import os
 from pathlib import Path
 from datetime import datetime, timezone
 from flask import render_template, flash, redirect, url_for, request, g, current_app
@@ -474,8 +475,9 @@ def explore_annotations():
 
 def load_gene_and_annotation_data():
     """Load both gene and annotation data from files into database"""
-    project_root = Path(__file__).resolve().parent.parent.parent.parent
-    data_dir = project_root / "src" / "etl" / "data"
+    # project_root = Path(__file__).resolve().parent.parent.parent.parent
+
+    data_dir = Path(os.environ.get("GENE_DATA_PATH", "/opt/pipeline/src/etl/data"))
 
     gene_reader = GeneReader(input_dir=data_dir)
     gene_reader.find_and_load_gene_data()

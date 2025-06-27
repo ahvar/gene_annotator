@@ -3,7 +3,7 @@ export PYTHONPATH=/opt/pipeline:$PYTHONPATH
 
 # Inject the DB URL from the secret
 export DATABASE_URL="mysql+pymysql://gene-annotator:${MYSQL_PASSWORD}@127.0.0.1:3306/gene_annotator"
-
+export GENE_DATA_PATH=/opt/pipeline/src/etl/data
 # Maximum number of retries
 MAX_RETRIES=30
 RETRY_COUNT=0

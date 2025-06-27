@@ -1,1 +1,1 @@
-FLASK_APP=src.app.gene_annotate
+FLASK_APP=src.gene_annotator_flask_shell_ctx
