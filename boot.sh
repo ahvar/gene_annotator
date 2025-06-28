@@ -70,7 +70,7 @@ try:
             
             # Check for data files
             genes_file = data_dir / 'genes.csv'
-            annotations_file = data_dir / 'gene_annotations.tsv'
+            annotations_file = data_dir / 'gene_annotation.tsv'
             
             if not genes_file.exists() or not annotations_file.exists():
                 files = list(data_dir.glob('*')) if data_dir.exists() else []
