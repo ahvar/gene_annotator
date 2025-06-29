@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Diagnostic Information</h1>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        Environment Variables
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            {% for key, value in results.environment.items() %}
+            <tr>
+                <th>{{ key }}</th>
+                <td><code>{{ value }}</code></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        File System
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            {% for key, value in results.file_system.items() %}
+            <tr>
+                <th>{{ key }}</th>
+                <td>
+                    {% if key.endswith('_exists') or key.endswith('_is_dir') %}
+                        {% if value %}
+                            <span class="badge bg-success">Yes</span>
+                        {% else %}
+                            <span class="badge bg-danger">No</span>
+                        {% endif %}
+                    {% else %}
+                        <code>{{ value }}</code>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        Database
+    </div>
+    <div class="card-body">
+        <table class="table table-striped">
+            {% for key, value in results.database.items() %}
+            <tr>
+                <th>{{ key }}</th>
+                <td>{{ value }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+
+{% if results.error %}
+<div class="card mb-4">
+    <div class="card-header bg-danger text-white">
+        Errors
+    </div>
+    <div class="card-body">
+        <p>{{ results.error }}</p>
+        <pre>{{ results.traceback }}</pre>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

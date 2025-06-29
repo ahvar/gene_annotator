@@ -17,7 +17,7 @@ class EditProfileForm(FlaskForm):
         super().__init__(*args, **kwargs)
         self.original_researcher_name = original_researcher_name
 
-    def validate_username(self, researcher_name):
+    def validate_researcher_name(self, researcher_name):
         if researcher_name.data != self.original_researcher_name:
             researcher = db.session.scalar(
                 sa.select(Researcher).where(

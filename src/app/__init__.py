@@ -11,7 +11,9 @@ from flask_babel import Babel
 from elasticsearch import Elasticsearch
 from src.config import Config
 
-from src.utils.pipeline_utils import init_frontend_logger
+from src.app.cli import init_frontend_logger
+
+app_logger = init_frontend_logger(logging.INFO)
 
 
 def get_locale():
@@ -75,5 +77,4 @@ def create_app(config_class=Config):
     return app
 
 
-app_logger = init_frontend_logger(logging.INFO)
 from src.app.models import researcher, gene, pipeline_run_service, pipeline_run

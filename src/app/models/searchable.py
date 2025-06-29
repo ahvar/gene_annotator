@@ -54,6 +54,18 @@ class SearchableMixin(object):
         )
         return db.session.scalars(query), total
 
+    def add_to_index(self):
+        """Add this object to the search index"""
+        from src.app.search import add_to_index
+
+        add_to_index(self.__tablename__, self)
+
+    def remove_from_index(self):
+        """Remove this object from the search index"""
+        from src.app.search import remove_from_index
+
+        remove_from_index(self.__tablename__, self)
+
     @classmethod
     def before_commit(cls, session):
         """Store changes before a commit occurs.

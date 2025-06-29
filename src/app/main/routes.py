@@ -1,4 +1,5 @@
 import logging
+import traceback
 import os
 from pathlib import Path
 from datetime import datetime, timezone
@@ -6,6 +7,7 @@ from flask import render_template, flash, redirect, url_for, request, g, current
 from flask_login import current_user, login_required
 from flask_babel import _, get_locale
 import sqlalchemy as sa
+import pandas as pd
 from langdetect import detect, LangDetectException
 from src.app import db
 from src.app.main.forms import (
@@ -397,11 +399,7 @@ def explore_genes():
     gene_count = db.session.scalar(sa.func.count(Gene.id))
     if gene_count == 0:
         # No genes in database - load initial data
-        frontend_logger.info(
-            _("No genes found in database. Loading initial gene data...")
-        )
-        load_gene_and_annotation_data()
-        flash(_("Initial gene data has been loaded."))
+        frontend_logger.info(_("No genes found in database."))
 
     page = request.args.get("page", 1, type=int)
     genes = get_paginated_genes(page)
@@ -448,12 +446,7 @@ def explore_annotations():
 
     if annotation_count == 0:
         # No annotations in database - load initial data
-        frontend_logger.info(
-            _("No annotations found in database. Loading initial annotation data...")
-        )
-        load_gene_and_annotation_data()
-        flash(_("Initial gene annotation data has been loaded."))
-
+        frontend_logger.info(_("No annotations found in database"))
     page = request.args.get("page", 1, type=int)
     annotations = get_paginated_annotations(page)
     return render_template(
@@ -477,21 +470,28 @@ def load_gene_and_annotation_data():
     """Load both gene and annotation data from files into database"""
     # project_root = Path(__file__).resolve().parent.parent.parent.parent
 
-    data_dir = Path(os.environ.get("GENE_DATA_PATH", "/opt/pipeline/src/etl/data"))
-
+    data_dir = Path(__file__).resolve().parent.parent.parent / "etl" / "data"
+    frontend_logger.info(f"Loading data from {data_dir}")
     gene_reader = GeneReader(input_dir=data_dir)
     gene_reader.find_and_load_gene_data()
     gene_reader.remove_duplicates()
 
     # Load genes
+    # Load genes
     for _, row in gene_reader.genes.iterrows():
+        # Convert NaN values to None before database insertion
         gene = Gene(
             gene_stable_id=row[gene_stable_id_col],
-            gene_type=row.get(gene_type_col),
-            gene_name=row.get(gene_name_col),
-            hgnc_name=row.get(hgnc_name),
-            hgnc_id=row.get(hgnc_id_col),
-            hgnc_id_exists=bool(row.get(hgnc_id_col)),
+            gene_type=(
+                None if pd.isna(row.get(gene_type_col)) else row.get(gene_type_col)
+            ),
+            gene_name=(
+                None if pd.isna(row.get(gene_name_col)) else row.get(gene_name_col)
+            ),
+            hgnc_name=None if pd.isna(row.get(hgnc_name)) else row.get(hgnc_name),
+            hgnc_id=None if pd.isna(row.get(hgnc_id_col)) else row.get(hgnc_id_col),
+            hgnc_id_exists=bool(row.get(hgnc_id_col))
+            and not pd.isna(row.get(hgnc_id_col)),
         )
         db.session.add(gene)
 
@@ -499,11 +499,21 @@ def load_gene_and_annotation_data():
     for _, row in gene_reader.gene_annotations.iterrows():
         annotation = GeneAnnotation(
             gene_stable_id=row[gene_stable_id_col],
-            hgnc_id=row.get(hgnc_id_col),
-            panther_id=row.get(panther_id_col),
-            tigrfam_id=row.get(tigrfam_id_col),
-            wikigene_name=row.get("wikigene_name"),
-            gene_description=row.get("gene_description"),
+            hgnc_id=None if pd.isna(row.get(hgnc_id_col)) else row.get(hgnc_id_col),
+            panther_id=(
+                None if pd.isna(row.get(panther_id_col)) else row.get(panther_id_col)
+            ),
+            tigrfam_id=(
+                None if pd.isna(row.get(tigrfam_id_col)) else row.get(tigrfam_id_col)
+            ),
+            wikigene_name=(
+                None if pd.isna(row.get("wikigene_name")) else row.get("wikigene_name")
+            ),
+            gene_description=(
+                None
+                if pd.isna(row.get("gene_description"))
+                else row.get("gene_description")
+            ),
         )
         db.session.add(annotation)
 
@@ -514,6 +524,76 @@ def load_gene_and_annotation_data():
     )
 
     return gene_reader.genes.shape[0], gene_reader.gene_annotations.shape[0]
+
+
+@bp.route("/diagnose")
+@login_required
+def diagnose():
+    """Diagnostic endpoint to troubleshoot data loading issues"""
+    results = {
+        "environment": {},
+        "file_system": {},
+        "database": {},
+    }
+
+    try:
+        # Environment variables
+        results["environment"] = {
+            "PYTHONPATH": os.environ.get("PYTHONPATH", "not set"),
+            "FLASK_APP": os.environ.get("FLASK_APP", "not set"),
+            "working_dir": os.getcwd(),
+            "FLASK_ENV": os.environ.get("FLASK_ENV", "not set"),
+            "DATABASE_URL": os.environ.get("DATABASE_URL", "not set").replace(
+                os.environ.get("MYSQL_PASSWORD", ""), "[REDACTED]"
+            ),
+            "CONTAINER_ENV": "Yes" if os.path.exists("/.dockerenv") else "No",
+        }
+
+        # File system checks
+        data_path = Path(__file__).resolve().parent.parent.parent / "etl" / "data"
+        gene_file = data_path / "genes.csv"
+        anno_file = data_path / "gene_annotation.tsv"  # Note: singular, not plural
+
+        results["file_system"] = {
+            "data_path_exists": data_path.exists(),
+            "data_path_is_dir": data_path.is_dir() if data_path.exists() else False,
+            "genes_csv_exists": gene_file.exists(),
+            "gene_annotation_tsv_exists": anno_file.exists(),
+            "data_dir_contents": (
+                str([f.name for f in data_path.glob("*")])
+                if data_path.exists()
+                else "N/A"
+            ),
+            "genes_csv_size": gene_file.stat().st_size if gene_file.exists() else 0,
+            "annotations_tsv_size": (
+                anno_file.stat().st_size if anno_file.exists() else 0
+            ),
+            "abs_data_path": str(data_path.absolute()),
+            "project_root": str(Path(__file__).resolve().parent.parent.parent.parent),
+            "data_parent_dir_exists": Path(__file__)
+            .resolve()
+            .parent.parent.parent.exists(),
+            "etl_dir_exists": Path(__file__)
+            .resolve()
+            .parent.parent.parent.joinpath("etl")
+            .exists(),
+            "data_path_readable": os.access(str(data_path), os.R_OK),
+            "parent_dir_writable": os.access(str(data_path.parent), os.W_OK),
+        }
+
+        # Database checks
+        results["database"] = {
+            "gene_count": db.session.scalar(sa.func.count(Gene.id)),
+            "annotation_count": db.session.scalar(sa.func.count(GeneAnnotation.id)),
+            "researcher_count": db.session.scalar(sa.func.count(Researcher.id)),
+            "post_count": db.session.scalar(sa.func.count(Post.id)),
+        }
+
+    except Exception as e:
+        results["error"] = str(e)
+        results["traceback"] = traceback.format_exc()
+
+    return render_template("diagnose.html", results=results)
 
 
 @bp.route("/researcher/<researcher_name>")
