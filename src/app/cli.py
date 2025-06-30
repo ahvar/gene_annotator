@@ -255,7 +255,7 @@ def create_search_indices():
             )
             if retry_count < max_retries:
                 print(f"Retrying in 10 seconds...")
-                time.sleep(10)
+                time.sleep(30)
             else:
                 print("Max retries reached, skipping indexing")
                 return
