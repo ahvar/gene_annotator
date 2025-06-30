@@ -156,36 +156,6 @@ def init_cli_logging(log_level: str) -> LoggingUtils:
         set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
 
 
-def _make_logfile_parent_dir_and_get_path() -> Path:
-    try:
-        logfile_parent = (
-            Path("/opt/eon/log")
-            / __Application__
-            / __version__.replace(".", "_")
-            / datetime.now().strftime("%Y%m%d%H%M%S")
-        )
-        logfile_parent.mkdir(exist_ok=True, parents=True)
-        return logfile_parent
-    except LogFileCreationError as lfe:
-        set_error_and_exit(f"Unable to create logfile parent dir: {lfe.filespec}")
-
-
-def init_frontend_logger(log_level: str) -> LoggingUtils:
-    try:
-        logfile_parent = _make_logfile_parent_dir_and_get_path()
-        log_file = logfile_parent / f"{GENE_ANNOTATOR_FRONTEND}.log"
-
-        logging_utils = LoggingUtils(
-            application_name=GENE_ANNOTATOR_FRONTEND,
-            log_file=log_file,
-            file_level=log_level,
-            console_level=logging.ERROR,
-        )
-        return logging_utils
-    except LogFileCreationError as lfe:
-        set_error_and_exit(f"Unable to create log file: {lfe.filespec}")
-
-
 def init_log_and_results_dir(etl_output_dir: Path) -> None:
     """
     Create the results and log output directories

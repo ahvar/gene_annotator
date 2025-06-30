@@ -1,0 +1,96 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-east-1
+    REPO_URI: 001570960384.dkr.ecr.us-east-1.amazonaws.com/gene-annotator
+    BINFMT_URI: 001570960384.dkr.ecr.us-east-1.amazonaws.com/ci-binfmt:latest
+
+phases:
+  pre_build:
+    commands:
+      - |
+        set -euxo pipefail
+        echo "== branch -> tag =="
+        if [[ -n "$BRANCH_NAME" ]]; then
+          BRANCH="$BRANCH_NAME"
+        elif [[ "$CODEBUILD_SOURCE_VERSION" == refs/heads/* ]]; then
+          BRANCH="${CODEBUILD_SOURCE_VERSION#refs/heads/}"
+        else
+          BRANCH=""
+        fi
+
+        # --------- sanitize accidental shell quotes from overriding environment variables in CodePipeline ---- #
+        BRANCH=${BRANCH#\"}; BRANCH=${BRANCH%\"}
+        BRANCH=${BRANCH#\'}; BRANCH=${BRANCH%\'}
+
+        RAW_ID=${CODEBUILD_BUILD_ID##*:}
+        SHORT_ID=${RAW_ID:0:5}
+        IS_RELEASE=false
+        case "$BRANCH" in
+          develop)        TAG="develop-${SHORT_ID}" ;;
+          main)           TAG="main-${SHORT_ID}" ;;
+          feature/*)      TAG="${BRANCH##*/}-${SHORT_ID}" ;;
+          release/*)
+            SEMVER=${BRANCH#release/}
+            TAG="${SEMVER}-${SHORT_ID}"
+            RELEASE_TAG="$SEMVER"
+            IS_RELEASE=true
+            ;;
+          *)              TAG="build-${SHORT_ID}" ;;
+        esac
+        echo "Image tag will be '$TAG'"
+        export TAG IS_RELEASE RELEASE_TAG BRANCH
+
+        # ------------------------- ECR Login ------------------------------------------
+        ACCOUNT_REGISTRY="${REPO_URI%%/*}" # 001570960384.dkr.ecr.us-east-1.amazonaws.com
+        aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_REGISTRY"
+        # ------------------------------------------------------------------------------
+        
+        # ------------------- Enable buildx for ARM cross-build ------------------------
+        docker buildx install
+        docker run --privileged --rm "$BINFMT_URI" --install all
+        docker buildx create --name arm --use
+        # ------------------------------------------------------------------------------
+
+        # remove illegal tag chars
+        TAG=${TAG//[^a-zA-Z0-9_.-]/-}
+        echo "Using image tag: '$TAG'"
+
+  build:
+    commands:
+      - |
+        set -euxo pipefail
+        DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
+        
+        # -------- Delete previous 'latest' if we are about to push it -------- 
+        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
+          echo "Deleting existing :latest tag (if any) to satisfy immutability policy"
+          aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
+        fi
+        # -------------------------------------------------------------------- 
+
+        # ----------- Compose extra tag arrays -------------------------------- 
+        EXTRA_TAGS=()
+        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
+          EXTRA_TAGS+=("-t" "$REPO_URI:latest")
+        fi
+        if [[ "$IS_RELEASE" == "true" ]]; then
+          EXTRA_TAGS+=("-t" "$REPO_URI:$RELEASE_TAG")
+        fi
+
+        # --------------------- Build ARM64 ONLY and push --------------------------------
+        docker buildx build --platform linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" "${EXTRA_TAGS[@]}" --push .
+        # --------------------------------------------------------------------------------
+
+
+  post_build:
+    commands:
+      - |
+        set -euo pipefail
+        aws ecr start-image-scan --repository-name "${REPO_URI#*/}" --image-id imageTag="$TAG" || true
+        printf '[{"name":"gene-annotator","imageUri":"%s"}]' "$REPO_URI:$TAG" > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json

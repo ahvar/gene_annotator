@@ -5,7 +5,14 @@
     "password": "johnpw",
     "about_me": "Geneticist specializing in CRISPR applications",
     "profile_type": "regular",
-    "following": ["arthurvargas", "bob_biologist"]
+    "following": ["arthurvargas", "bob_biologist", "emma_enzyme", "sarah_sequencer"],
+    "posts": [
+      "Just published a new paper on CRISPR efficiency",
+      "Looking for collaborators on gene editing project",
+      "New results show 30% improvement in gene targeting",
+      "Working on a review of recent CRISPR advances",
+      "Our lab is recruiting PhD students for gene editing research"
+    ]
   },
   {
     "researcher_name": "arthurvargas",
@@ -13,7 +20,15 @@
     "password": "pw",
     "about_me": "Bioinformatics software engineer",
     "profile_type": "regular",
-    "following": ["bob_biologist", "alice_admin"]
+    "following": ["bob_biologist", "alice_admin", "rachel_rna", "mike_microscope"],
+    "posts": [
+      "Released new version of Gene Annotator",
+      "Check out our improved ETL pipeline",
+      "He arreglado varios errores en el módulo de anotación",
+      "Estamos trabajando en la integración de nuevos datos de rutas KEGG",
+      "Developing a new visualization for gene networks",
+      "Buscando opiniones sobre el nuevo diseño de la interfaz de usuario"
+    ]
   },
   {
     "researcher_name": "alice_admin",
@@ -21,8 +36,15 @@
     "password": "alicepw123",
     "about_me": "System administrator and bioinformatics specialist",
     "profile_type": "admin",
-    "following": ["arthurvargas"],
-    "posts": ["Hello all!", "follow me for administrative updates"]
+    "following": ["arthurvargas", "nancy_neuro", "olivia_organelle"],
+    "posts": [
+      "Hello all!",
+      "Follow me for administrative updates",
+      "System maintenance scheduled for this weekend",
+      "New compute cluster available for genomic analysis",
+      "Updated the pipeline documentation",
+      "Workshop on advanced database queries next month"
+    ]
   },
   {
     "researcher_name": "bob_biologist",
@@ -30,8 +52,15 @@
     "password": "bobsecret",
     "about_me": "Molecular biologist focusing on human genome annotation",
     "profile_type": "regular",
-    "posts": ["our latest etl pipeline merges gene and annotation datasets"],
-    "following": ["alice_admin", "arthurvargas"]
+    "following": ["alice_admin", "arthurvargas", "emma_enzyme", "frank_fungal"],
+    "posts": [
+      "Our latest ETL pipeline merges gene and annotation datasets",
+      "Found interesting patterns in exon conservation",
+      "Working on a comparative genomics project",
+      "New insights into gene regulation mechanisms",
+      "Just finished analyzing RNA-seq data from 300 tissue samples",
+      "Looking for collaborators on protein domain annotation"
+    ]
   },
   {
     "researcher_name": "emma_enzyme",
@@ -39,8 +68,15 @@
     "password": "enzymepower",
     "about_me": "Studying enzymatic reactions in gene expression",
     "profile_type": "regular",
-    "posts": ["Ran the pipeline, let's take a look at the merged dataset"],
-    "following": ["bob_biologist", "arthurvargas", "alice_admin", "john_researcher"]
+    "following": ["bob_biologist", "arthurvargas", "alice_admin", "john_researcher", "gary_genome"],
+    "posts": [
+      "Ran the pipeline, let's take a look at the merged dataset",
+      "Los resultados muestran una eficiencia catalítica mejorada en la transcripción",
+      "Nuevos hallazgos sobre mecanismos reguladores enzimáticos",
+      "Just published in Journal of Molecular Biology",
+      "Nuestro laboratorio desarrolló un nuevo ensayo para la actividad metiltransferasa",
+      "Looking for a postdoc with experience in protein biochemistry"
+    ]
   },
   {
     "researcher_name": "david_data",
@@ -48,42 +84,248 @@
     "password": "datapower456",
     "about_me": "Bioinformatics data analyst with 10+ years experience",
     "profile_type": "regular",
-    "posts": ["Hi everyone!"],
-    "following": ["alice_admin"]
+    "following": ["alice_admin", "arthurvargas", "ian_immunology", "frank_fungal"],
+    "posts": [
+      "Hi everyone!",
+      "Just released a new R package for RNA-seq analysis",
+      "Machine learning approach yields better gene predictions",
+      "Working on integrating single-cell data with bulk RNA-seq",
+      "New visualization techniques for complex genomic data",
+      "Interesting patterns in the cancer mutation database"
+    ]
   },
   {
     "researcher_name": "sarah_sequencer",
-    "email": "sarah@genomics.io",
-    "password": "dna$equence",
+    "email": "sarah@sequencing.org",
+    "password": "sequence123",
     "about_me": "Next-gen sequencing specialist with publication history",
-    "profile_type": "premium"
+    "profile_type": "premium",
+    "following": ["john_researcher", "carlos_cancer", "patricia_protein", "quentin_qc"],
+    "posts": [
+      "Just completed a large-scale sequencing project",
+      "Looking for patterns in BRCA2 variants",
+      "Optimized our long-read sequencing protocol",
+      "New method for low-input library preparation",
+      "Comparative analysis of sequencing platforms",
+      "Troubleshooting guide for common NGS issues"
+    ]
   },
   {
     "researcher_name": "mike_microscope",
     "email": "mike@cellbiology.net",
     "password": "cellview3d",
     "about_me": "Cell biologist interested in genetic markers",
-    "profile_type": "regular"
+    "profile_type": "regular",
+    "following": ["patricia_protein", "david_data", "emma_enzyme", "hannah_histology"],
+    "posts": [
+      "New fluorescence techniques for visualizing gene expression",
+      "Conference next month on cellular imaging",
+      "Super-resolution microscopy reveals chromatin organization",
+      "Developed a new FISH protocol for low-abundance transcripts",
+      "Time-lapse imaging of transcription factor dynamics",
+      "Looking for collaborators on in situ sequencing methods"
+    ]
   },
   {
     "researcher_name": "patricia_protein",
     "email": "pprotein@folding.org",
     "password": "fold1ngPr0t",
     "about_me": "Protein folding and gene expression research",
-    "profile_type": "regular"
+    "profile_type": "regular",
+    "following": ["sarah_sequencer", "mike_microscope", "carlos_cancer", "lisa_lipid"],
+    "posts": [
+      "New computational model for protein structure prediction",
+      "How gene mutations affect protein folding",
+      "Cryo-EM reveals novel protein complex structure",
+      "Correlation between mRNA levels and protein abundance",
+      "Post-translational modifications in disease progression",
+      "Recruiting students for protein structure research"
+    ]
   },
   {
     "researcher_name": "carlos_cancer",
     "email": "carlos@oncology.med",
     "password": "c@ncerRe$earch",
     "about_me": "Oncology researcher studying genetic markers for early detection",
-    "profile_type": "premium"
+    "profile_type": "premium",
+    "following": ["sarah_sequencer", "john_researcher", "patricia_protein", "olivia_organelle"],
+    "posts": [
+      "Breakthrough in early detection biomarkers",
+      "Seeking collaborators for clinical trials",
+      "Nueva investigación sobre marcadores genéticos para el cáncer de colon",
+      "Hemos descubierto patrones de expresión génica que predicen la respuesta al tratamiento",
+      "Buscando colaboradores para un estudio sobre mutaciones en BRCA1/2",
+      "Funding opportunity for cancer genomics research",
+      "Acabamos de publicar nuestra base de datos completa de mutaciones cancerígenas"
+    ]
+  },
+  {
+    "researcher_name": "frank_fungal",
+    "email": "frank@mycology.edu",
+    "password": "fungiR0ck",
+    "about_me": "Mycologist studying gene regulation in fungi",
+    "profile_type": "regular",
+    "following": ["bob_biologist", "emma_enzyme", "david_data"],
+    "posts": [
+      "New insights into fungal gene regulation",
+      "Comparative genomics of pathogenic fungi",
+      "Novel gene clusters identified in Aspergillus",
+      "Evolution of mating-type loci in yeasts",
+      "Looking for collaborators on fungal genetics",
+      "Teaching a workshop on fungal molecular biology"
+    ]
+  },
+  {
+    "researcher_name": "gary_genome",
+    "email": "gary@genomics.org",
+    "password": "gen0m1cs",
+    "about_me": "Genomics researcher focusing on structural variants",
+    "profile_type": "premium",
+    "following": ["john_researcher", "arthurvargas", "sarah_sequencer"],
+    "posts": [
+      "Developed new algorithm for structural variant detection",
+      "Long-read sequencing reveals complex genomic rearrangements",
+      "Comparative analysis of vertebrate genomes",
+      "Just published our findings on copy number variation",
+      "Looking for postdocs with experience in population genomics",
+      "New insights into the role of non-coding variants"
+    ]
+  },
+  {
+    "researcher_name": "hannah_histology",
+    "email": "hannah@histology.med",
+    "password": "t1ssueAn@lysis",
+    "about_me": "Histologist specializing in tissue-specific gene expression",
+    "profile_type": "regular",
+    "following": ["mike_microscope", "patricia_protein", "olivia_organelle"],
+    "posts": [
+      "New staining method for visualizing RNA in tissue sections",
+      "Correlation between histology and gene expression profiles",
+      "Tissue-specific splicing patterns in development",
+      "Advanced techniques for single-cell analysis in tissues",
+      "Looking for collaborators on spatial transcriptomics",
+      "Just received funding for our tissue atlas project"
+    ]
+  },
+  {
+    "researcher_name": "ian_immunology",
+    "email": "ian@immunology.org",
+    "password": "1mmun3Syst3m",
+    "about_me": "Immunologist studying genetic factors in immune response",
+    "profile_type": "regular",
+    "following": ["david_data", "carlos_cancer", "nancy_neuro"],
+    "posts": [
+      "New findings on genetic factors affecting vaccine response",
+      "Gene expression signatures of T cell activation",
+      "Role of regulatory T cells in autoimmune disease",
+      "Single-cell analysis reveals immune cell heterogeneity",
+      "Looking for collaborators on immune repertoire sequencing",
+      "Just published our findings on cytokine gene regulation"
+    ]
+  },
+  {
+    "researcher_name": "lisa_lipid",
+    "email": "lisa@lipidology.edu",
+    "password": "l1p1d$ci",
+    "about_me": "Lipid researcher focusing on metabolic gene networks",
+    "profile_type": "regular",
+    "following": ["patricia_protein", "emma_enzyme", "olivia_organelle"],
+    "posts": [
+      "New insights into lipid metabolism gene regulation",
+      "Lipidomics approach reveals novel signaling pathways",
+      "El papel de las balsas lipídicas en la función de proteínas de membrana",
+      "Factores genéticos en trastornos de almacenamiento de lípidos",
+      "Just received grant for lipid-protein interaction studies",
+      "Looking for collaborators on lipidomics data analysis"
+    ]
+  },
+  {
+    "researcher_name": "nancy_neuro",
+    "email": "nancy@neuroscience.edu",
+    "password": "br@1nG3nes",
+    "about_me": "Neuroscientist studying gene expression in the brain",
+    "profile_type": "premium",
+    "following": ["ian_immunology", "carlos_cancer", "quentin_qc"],
+    "posts": [
+      "New findings on gene expression in neurodegenerative disease",
+      "Single-cell analysis of cortical neurons",
+      "Epigenetic changes during brain development",
+      "Role of non-coding RNAs in synaptic plasticity",
+      "Looking for collaborators on brain organoid studies",
+      "Just published our brain region transcriptome atlas"
+    ]
+  },
+  {
+    "researcher_name": "olivia_organelle",
+    "email": "olivia@cell-biology.org",
+    "password": "0rg@nelles",
+    "about_me": "Cell biologist focusing on organelle-specific gene expression",
+    "profile_type": "regular",
+    "following": ["mike_microscope", "lisa_lipid", "patricia_protein"],
+    "posts": [
+      "New method for isolating organelle-specific mRNAs",
+      "Mitochondrial gene expression regulation in disease",
+      "Organelle-specific proteomics reveals novel functions",
+      "Cross-talk between nucleus and mitochondria",
+      "Looking for collaborators on organelle biogenesis",
+      "Just published our findings on ER stress response"
+    ]
+  },
+  {
+    "researcher_name": "quentin_qc",
+    "email": "quentin@qualitycontrol.org",
+    "password": "QC_m@ster",
+    "about_me": "Quality control specialist for genomics data",
+    "profile_type": "regular",
+    "following": ["sarah_sequencer", "david_data", "gary_genome"],
+    "posts": [
+      "New quality metrics for RNA-seq data",
+      "Benchmarking variant calling pipelines",
+      "Common pitfalls in genomics data analysis",
+      "Statistical approaches to identify batch effects",
+      "Developed new tool for sequencing QC automation",
+      "Workshop on reproducible genomics analysis next month"
+    ]
+  },
+  {
+    "researcher_name": "rachel_rna",
+    "email": "rachel@rna-biology.edu",
+    "password": "RN@w0rld",
+    "about_me": "RNA biologist studying non-coding RNAs",
+    "profile_type": "premium",
+    "following": ["arthurvargas", "john_researcher", "emma_enzyme"],
+    "posts": [
+      "New long non-coding RNAs involved in gene regulation",
+      "CRISPR screening identifies RNA binding protein functions",
+      "Role of microRNAs in development and disease",
+      "Structure-function relationships in regulatory RNAs",
+      "Looking for collaborators on RNA-protein interaction studies",
+      "Just published our findings on RNA modifications"
+    ]
+  },
+  {
+    "researcher_name": "sam_systems",
+    "email": "sam@systems-biology.org",
+    "password": "syst3msB10",
+    "about_me": "Systems biologist integrating multi-omics data",
+    "profile_type": "regular",
+    "following": ["david_data", "gary_genome", "rachel_rna"],
+    "posts": [
+      "Integrated analysis of transcriptomics and proteomics data",
+      "Network-based approaches to identify gene modules",
+      "Multi-omics reveals novel regulatory mechanisms",
+      "Developed new tool for pathway enrichment analysis",
+      "Looking for collaborators on systems medicine approaches",
+      "Just published our findings on gene regulatory networks"
+    ]
   },
   {
     "researcher_name": "test-user",
     "email": "test@example.com",
     "password": "password123",
     "about_me": "Test account with minimal privileges",
-    "profile_type": "test"
+    "profile_type": "test",
+    "posts": ["This is a test post", "Testing the microblog functionality"],
+    "following": ["alice_admin", "arthurvargas"]
   }
 ]

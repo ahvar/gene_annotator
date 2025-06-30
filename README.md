@@ -1,10 +1,38 @@
-# Gene Annotator v0.1.0
+# Gene Annotator v1.0.0
 
-# Introduction 
-ETL pipeline and API for duplicate and unique record identification. 
+# Introduction
+ETL pipeline and microblog
 
-# Run Gene Annotator Locally
-Here are the steps to run Gene Annotator from the command-line in your local environment. 
+# Key Features
+- Data processing pipeline
+- Collaboration network with microblogging capabilities and researcher profiles
+- Pipeline run history and sharing
+- Full text search for posts
+
+# Data Processing Steps
+- Reads gene and annotation data from file, loads to sql db
+- Identifies and logs duplicate records
+- Removes duplicate records and logs the unique ones
+- Writes the gene_type count to file
+- Determines if hgnc_id exists and appends a new column hgnc_id_exists
+- Merges gene and annotation datasets
+- Excludes records where tigrfam_id is null or contains specific undesired values
+- Writes excluded tigrfam_id entries to excluded_tigrfam_ids.csv
+- Stores results as PipelineRun in db and writes to a final_results file
+
+# Application Architecture
+- Flask Web App
+- SQLAlchemy ORM: DB interaction layer
+- Elasticsearch: Full-text search for researcher posts
+- Alembic: Database migrations
+- Pandas: File I/O and data processing steps
+- Typer CLI
+
+# Data Models
+- Gene, GeneAnnotation, Researcher, Post, PipeineRun
+
+# How to Run Gene Annotator Locally
+Here are the steps to run Gene Annotator CLI locally. 
     
 ## Extraction: 
 Extract or clone all files to your local environment.
@@ -81,21 +109,4 @@ Here are the steps to build the Gene Annotator container and run it
     # the Dockerfile has an ENTRYPOINT that points to etl/pipeline.py
     # running a container from this image will automatically execute the script
     $ docker run --name gene_annotate_container gene_annotate
-
-## Run Interactively
-    # to inspect output files in the container, run unit tests, or the api/app.py
-    # run the container interactively and override the ENTRYPOINT
-    # map port '5000' of the host to port '5000' of the container
-    $ docker run -it -p 5000:5000 --entrypoint /bin/bash --name gene_annotate_container gene_annotate
-
-# Functionality
-    - Reads data from genes.csv and gene_annotations.tsv.
-    - Identifies and logs duplicate records.
-    - Removes duplicate records and logs the unique ones.
-    - Writes the gene_type count to gene_type_count.csv.
-    - Determines if hgnc_id exists and appends a new column hgnc_id_exists.
-    - Merges gene data with gene annotations.
-    - Excludes records where tigrfam_id is null or contains specific undesired values.
-    - Writes excluded tigrfam_id entries to excluded_tigrfam_ids.csv.
-    - Outputs the final merged data to final_results.csv.
 
