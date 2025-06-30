@@ -1,6 +1,7 @@
 import os
 import click
 import logging
+import time
 import json
 import random
 import sqlalchemy as sa
@@ -233,9 +234,31 @@ def create_search_indices():
     from flask import current_app
     import sqlalchemy as sa
 
-    if not current_app.elasticsearch:
-        print("Elasticsearch not configured, skipping index creation")
-        return
+    max_retries = 5
+    retry_count = 0
+    while retry_count < max_retries:
+        try:
+
+            if not current_app.elasticsearch:
+                print("Elasticsearch not configured, skipping index creation")
+                return
+            # Test connection before proceeding
+            health = current_app.elasticsearch.cluster.health(timeout="5s")
+            print(
+                f"Successfully connected to Elasticsearch: {health.get('status', 'unknown')} status"
+            )
+            break
+        except Exception as e:
+            retry_count += 1
+            print(
+                f"Failed to connect to Elasticsearch (attempt {retry_count}/{max_retries}): {str(e)}"
+            )
+            if retry_count < max_retries:
+                print(f"Retrying in 10 seconds...")
+                time.sleep(10)
+            else:
+                print("Max retries reached, skipping indexing")
+                return
 
     print("Creating search indices and indexing existing posts...")
 
