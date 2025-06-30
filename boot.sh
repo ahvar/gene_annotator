@@ -52,16 +52,39 @@ ES_READY=false
 ES_RETRY_COUNT=0
 ES_MAX_RETRIES=30
 # Try both hostname and localhost to maximize chances of success
-ES_URLS=("http://elasticsearch:9200" "http://localhost:9200")
+ES_URLS=("http://elasticsearch:9200" "http://localhost:9200" "http://127.0.0.1:9200")
 
 while [ $ES_RETRY_COUNT -lt $ES_MAX_RETRIES ]; do
+    # Run diagnostics on every 5th attempt
+    if [ $((ES_RETRY_COUNT % 5)) -eq 0 ]; then
+        echo "Performing connection diagnostics (attempt $ES_RETRY_COUNT)..."
+        
+        # Check for command availability before running
+        if command -v ping > /dev/null; then
+            echo "Trying to ping elasticsearch..."
+            ping -c 2 elasticsearch || echo "Ping failed"
+        fi
+        
+        if command -v curl > /dev/null; then
+            echo "Testing elasticsearch with curl..."
+            curl -m 5 -v http://elasticsearch:9200 || echo "Curl to elasticsearch hostname failed"
+            curl -m 5 -v http://localhost:9200 || echo "Curl to localhost failed"
+            curl -m 5 -v http://127.0.0.1:9200 || echo "Curl to 127.0.0.1 failed"
+        fi
+    fi
+    
     for ES_URL in "${ES_URLS[@]}"; do
-        if curl -s -f "${ES_URL}/_cluster/health" > /dev/null 2>&1; then
+        echo "Trying to connect to $ES_URL..."
+        # Save the curl output for inspection instead of discarding it
+        CURL_OUTPUT=$(curl -s -m 5 "${ES_URL}/_cluster/health" 2>&1)
+        if [ $? -eq 0 ]; then
             echo "Successfully connected to Elasticsearch at ${ES_URL}"
+            echo "Elasticsearch response: $CURL_OUTPUT"
             ES_READY=true
-            # Export the working URL so the app uses the correct one
             export ELASTICSEARCH_URL="${ES_URL}"
             break 2
+        else
+            echo "Failed to connect to ${ES_URL}: $CURL_OUTPUT"
         fi
     done
     
@@ -71,6 +94,11 @@ while [ $ES_RETRY_COUNT -lt $ES_MAX_RETRIES ]; do
     
     if [ $ES_RETRY_COUNT -eq $ES_MAX_RETRIES ]; then
         echo "Elasticsearch is not available after maximum retries. Search functionality may be limited."
+        # Final diagnostics attempt
+        echo "Final network diagnostics:"
+        ip addr
+        netstat -tulpn | grep 9200 || echo "netstat command not available"
+        ps aux | grep elastic || echo "ps command not available"
     fi
 done
 
