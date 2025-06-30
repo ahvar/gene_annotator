@@ -327,5 +327,12 @@
     "profile_type": "test",
     "posts": ["This is a test post", "Testing the microblog functionality"],
     "following": ["alice_admin", "arthurvargas"]
+  },
+  {
+    "researcher_name": "fred_funguy",
+    "email": "fred_funguy@company.com",
+    "password": "fredfunguy",
+    "about_me": "Hi, I'm a fungi",
+    "profile_type": "test"
   }
 ]

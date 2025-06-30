@@ -9,6 +9,22 @@ ETL pipeline and microblog
 - Pipeline run history and sharing
 - Full text search for posts
 
+# Access
+You can access the development instance of Gene Annotator at:
+[Gene Annotator Development Instance](http://gene-annotator-lb-1630757355.us-east-1.elb.amazonaws.com:8000/auth/login?next=%2F)
+
+This instance provides a fully functional environment with:
+- Sample gene and annotation data
+- Test user accounts (see below for credentials)
+- Full pipeline functionality
+- Elasticsearch integration for post searching
+
+### Test Credentials
+You can log in with any of these accounts to explore the application:
+- Username: `test-user` / Password: `password123`
+- Username: `alice_admin` / Password: `alicepw123`
+- Username: `arthurvargas` / Password: `(contact admin for password)`
+
 # Data Processing Steps
 - Reads gene and annotation data from file, loads to sql db
 - Identifies and logs duplicate records
