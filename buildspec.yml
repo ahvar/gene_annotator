@@ -74,6 +74,29 @@ phases:
         #######################################################
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
           echo "Deleting any existing :latest image to satisfy tag‑immutability…"
+
+          # Capture exit status
+          if ! aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest ; then
+            echo "Could not delete :latest (check IAM permissions)" >&2
+            exit 1
+          fi
+
+          # Wait up to 90 s for eventual‑consistency
+          for i in {1..30}; do
+            if ! aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --query 'imageDetails[0]' --output text 2>/dev/null ; then
+              echo ":latest is gone after ${i}s"
+              break
+            fi
+            echo "  …still deleting, waiting 3 s"
+            sleep 3
+          done
+
+          # Final check
+          if aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --output text 2>/dev/null ; then
+            echo " :latest still present after 90 s – aborting deploy" >&2
+            exit 1
+          fi
+
           aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
         
           # Wait until ECR confirms :latest is really gone (eventual consistency)
