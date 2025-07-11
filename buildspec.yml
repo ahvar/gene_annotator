@@ -20,7 +20,7 @@ phases:
           BRANCH=""
         fi
 
-        # --------- sanitize accidental shell quotes from overriding environment variables in CodePipeline ---- #
+        # --------- sanitize accidental shell quotes that result from overriding environment variables in CodePipeline ---- #
         BRANCH=${BRANCH#\"}; BRANCH=${BRANCH%\"}
         BRANCH=${BRANCH#\'}; BRANCH=${BRANCH%\'}
 
@@ -43,7 +43,7 @@ phases:
         export TAG IS_RELEASE RELEASE_TAG BRANCH
 
         # ------------------------- ECR Login ------------------------------------------
-        ACCOUNT_REGISTRY="${REPO_URI%%/*}" # 001570960384.dkr.ecr.us-east-1.amazonaws.com
+        ACCOUNT_REGISTRY="${REPO_URI%%/*}" # <acct>.dkr.ecr.<region>.amazonaws.com
         aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ACCOUNT_REGISTRY"
         # ------------------------------------------------------------------------------
         
@@ -62,27 +62,37 @@ phases:
       - |
         set -euxo pipefail
         DOCKERFILE_PATH=$(test -f Dockerfile && echo Dockerfile || echo containers/Dockerfile)
-        
-        # -------- Delete previous 'latest' if we are about to push it -------- 
+
+        #############################################
+        # 1  Build & push the unique, immutable tag
+        #############################################
+        docker buildx build --platform linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" --push .
+
+        #######################################################
+        # 2  If this is main or a release, recycle the 'latest'
+        #   (and semver) tags without breaking immutability
+        #######################################################
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
-          echo "Deleting existing :latest tag (if any) to satisfy immutability policy"
+          echo "Deleting any existing :latest image to satisfy tag‑immutability…"
           aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
-        fi
-        # -------------------------------------------------------------------- 
+        
+          # Wait until ECR confirms :latest is really gone (eventual consistency)
+          # problem with this earlier where latest still in ECR causes main and release builds to fail
+          while aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --query 'imageDetails[0]' --output text 2>/dev/null; do
+            echo "  …still deleting, waiting 3 s"; sleep 3
+          done
+          echo ":latest removed"
 
-        # ----------- Compose extra tag arrays -------------------------------- 
-        EXTRA_TAGS=()
-        if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
-          EXTRA_TAGS+=("-t" "$REPO_URI:latest")
-        fi
-        if [[ "$IS_RELEASE" == "true" ]]; then
-          EXTRA_TAGS+=("-t" "$REPO_URI:$RELEASE_TAG")
-        fi
+          # Pull the manifest for the *fresh* image we just pushed
+          MANIFEST=$(aws ecr batch-get-image --repository-name "${REPO_URI#*/}" --image-ids imageTag="$TAG" --query 'images[0].imageManifest' --output text)
 
-        # --------------------- Build ARM64 ONLY and push --------------------------------
-        docker buildx build --platform linux/arm64 -f "$DOCKERFILE_PATH" -t "$REPO_URI:$TAG" "${EXTRA_TAGS[@]}" --push .
-        # --------------------------------------------------------------------------------
+          # Re‑tag the same digest as :latest (and <semver>)
+          aws ecr put-image --repository-name "${REPO_URI#*/}" --image-manifest "$MANIFEST" --image-tag latest
 
+          if [[ "$IS_RELEASE" == "true" ]]; then
+            aws ecr put-image --repository-name "${REPO_URI#*/}" --image-manifest "$MANIFEST" --image-tag "$RELEASE_TAG"
+          fi
+        fi
 
   post_build:
     commands:
