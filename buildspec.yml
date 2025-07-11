@@ -74,14 +74,28 @@ phases:
         #######################################################
         if [[ "$BRANCH" == "main" || "$IS_RELEASE" == "true" ]]; then
           echo "Deleting any existing :latest image to satisfy tag‑immutability…"
-          aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest || true
-        
-          # Wait until ECR confirms :latest is really gone (eventual consistency)
-          # problem with this earlier where latest still in ECR causes main and release builds to fail
-          while aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --query 'imageDetails[0]' --output text 2>/dev/null; do
-            echo "  …still deleting, waiting 3 s"; sleep 3
+
+          # Capture exit status
+          if ! aws ecr batch-delete-image --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest ; then
+            echo "Could not delete :latest (check IAM permissions)" >&2
+            exit 1
+          fi
+
+          # Wait up to 90 s for eventual‑consistency
+          for i in {1..30}; do
+            if ! aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --query 'imageDetails[0]' --output text 2>/dev/null ; then
+              echo ":latest is gone after ${i}s"
+              break
+            fi
+            echo "  …still deleting, waiting 3 s"
+            sleep 3
           done
-          echo ":latest removed"
+
+          # Final check
+          if aws ecr describe-images --repository-name "${REPO_URI#*/}" --image-ids imageTag=latest --output text 2>/dev/null ; then
+            echo " :latest still present after 90 s – aborting deploy" >&2
+            exit 1
+          fi
 
           # Pull the manifest for the *fresh* image we just pushed
           MANIFEST=$(aws ecr batch-get-image --repository-name "${REPO_URI#*/}" --image-ids imageTag="$TAG" --query 'images[0].imageManifest' --output text)
