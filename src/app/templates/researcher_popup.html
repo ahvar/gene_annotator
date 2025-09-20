@@ -1,0 +1,30 @@
+<div>
+    <img src="{{ researcher.avatar(64) }}" style="margin: 5px; float: left">
+    <p><a href="{{ url_for('main.researcher, researcher_name=researcher.researcher_name') }}">{{ researcher.researcher_name }}</a></p>
+    {% if researcher.about_me %}
+    <p>
+        {{ researcher.about_me }}
+    </p>
+    {% endif %}
+    <div class="clearfix"></div>
+        {% if researcher.last_seen %}
+        <p>{{ _('Last seen on') }}: {{ moment(researcher.last_seen).format('lll') }}</p>
+        {% endif %}
+        <p>{{ _('%(count)d followers', count=researcher.followers_count()) }}, {{ _('%(count)d following', count=researcher.following_count()) }}</p>
+        {% if researcher != current_user.is_following(user) %}
+        <p>
+            <form action="{{ url_for('main.follow', researcher_name=researcher.researcher_name) }}" method="post">
+                {{ researcher.hidden_tag() }}
+                {{ form.submit(value=_('Follow'), class='btn btn-outline-primary btn-sm') }}
+            </form>
+        </p>
+        {% else %}
+        <p>
+            <form action="{{ url_for('main.unfollow', researcher_name=researcher.researcher_name) }}" method="post">
+                {{ form.hidden_tag() }}
+                {{ form.submit(value=_('Unfollow'), class_='btn btn-outline-primary btn-sm') }}
+            </form>
+        </p>
+        {% endif %}
+    {% endif %}
+</div>
