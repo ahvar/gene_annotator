@@ -7,7 +7,7 @@
         </td>
         <td>
             {% set researcher_link %}
-                <a href="{{ url_for('main.researcher', researcher_name=post.author.researcher_name) }}">
+                <a class="researcher_popup" href="{{ url_for('main.researcher', researcher_name=post.author.researcher_name) }}">
                     {{ post.author.researcher_name }}
                 </a>
             {% endset %}

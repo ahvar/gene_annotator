@@ -865,3 +865,13 @@ def search():
         next_url=next_url,
         prev_url=prev_url,
     )
+
+
+@bp.route("/researcher/<researcher_name>/popup")
+@login_required
+def researcher_popup(researcher_name):
+    researcher = db.first_or_404(
+        sa.select(Researcher).where(Researcher.researcher_name == researcher_name)
+    )
+    form = EmptyForm()
+    return render_template("researcher_popup.html", researcher=researcher, form=form)
