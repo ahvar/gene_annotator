@@ -63,6 +63,10 @@ class Researcher(UserMixin, db.Model):
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
+    last_message_read_time: so.Mapped[Optional[datetime]]
+    messages_sent: so.WriteOnlyMapped["Message"] = so.relationship(
+        foreign_keys="Message.sender_id", back_populates="recipient"
+    )
     posts: so.WriteOnlyMapped["Post"] = so.relationship(back_populates="author")
 
     runs: so.Mapped[list["PipelineRun"]] = so.relationship(
@@ -206,6 +210,23 @@ class Post(SearchableMixin, db.Model):
 
     def __repr__(self):
         return "<Post {}>".format(self.body)
+
+
+class Message(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    sender_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    recipient_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    body: so.Mapped[str] = so.mapped_column(sa.String(140))
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc)
+    )
+
+    def __repr__(self):
+        return "<Message {}>".format(self.body)
 
 
 @login.user_loader
