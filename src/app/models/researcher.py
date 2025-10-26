@@ -67,6 +67,9 @@ class Researcher(UserMixin, db.Model):
     messages_sent: so.WriteOnlyMapped["Message"] = so.relationship(
         foreign_keys="Message.sender_id", back_populates="recipient"
     )
+    messages_received: so.WriteOnlyMapped["Message"] = so.relationship(
+        foreign_keys="Message.recipient_id", back_populates="recipient"
+    )
     posts: so.WriteOnlyMapped["Post"] = so.relationship(back_populates="author")
 
     runs: so.Mapped[list["PipelineRun"]] = so.relationship(
@@ -192,6 +195,15 @@ class Researcher(UserMixin, db.Model):
             .order_by(Post.timestamp.desc())
         )
 
+    def unread_messages_count(self):
+        last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+        query = sa.select(Message).where(
+            Message.recipient == self, Message.timestamp > last_read_time
+        )
+        return db.session.scalar(
+            sa.select(sa.func.count()).select_from(query.subquery())
+        )
+
 
 class Post(SearchableMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -223,6 +235,12 @@ class Message(db.Model):
     body: so.Mapped[str] = so.mapped_column(sa.String(140))
     timestamp: so.Mapped[datetime] = so.mapped_column(
         index=True, default=lambda: datetime.now(timezone.utc)
+    )
+    author: so.Mapped[Researcher] = so.relationship(
+        foreign_keys="Message.recipient_id", back_populates="messages_sent"
+    )
+    recipient: so.Mapped[Researcher] = so.relationship(
+        foreign_keys="Message.recipient_id", back_populates="messages_received"
     )
 
     def __repr__(self):
