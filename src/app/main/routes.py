@@ -16,8 +16,9 @@ from src.app.main.forms import (
     PostForm,
     GeneAnnotationForm,
     SearchForm,
+    MessageForm,
 )
-from src.app.models.researcher import Researcher, Post
+from src.app.models.researcher import Researcher, Post, Message
 from src.app.models.gene import Gene, GeneAnnotation
 from src.app.models.pipeline_run import PipelineRun, PipelineResult
 from src.app.models.pipeline_run_service import (
@@ -837,6 +838,24 @@ def translate_next():
     return {
         "text": translate(data["text"], data["source_language"], data["dest_language"])
     }
+
+
+@bp.route("/send_message/<recipient>", methods=["GET", "POST"])
+@login_required
+def send_message(recipient):
+    researcher = db.first_or_404(
+        sa.select(Researcher).where(Researcher.researcher_name == recipient)
+    )
+    form = MessageForm()
+    if form.validate_on_submit():
+        msg = Message(author=current_user, recipient=researcher, body=form.message.data)
+        db.session.add(msg)
+        db.session.commit()
+        flash(_("Your message has been sent."))
+        return redirect(url_for("main.researcher", researcher_name=recipient))
+    return render_template(
+        "send_message.html", title=_("Send Message"), form=form, recipient=recipient
+    )
 
 
 @bp.route("/search")
