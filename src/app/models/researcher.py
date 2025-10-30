@@ -131,6 +131,21 @@ class Researcher(UserMixin, db.Model):
             algorithm="HS256",
         )
 
+    def add_notification(self, name, data):
+        """
+        Helper method to add researcher's notification to database and ensure
+        that if a notification with same name already exists, it is removed first.
+
+        :params name: the name for this notification
+        :params data: the notification data
+        :returns n: the notification object
+
+        """
+        db.session.execute(self.notifications.delete().where(Notification.name == name))
+        n = Notification(name=name, payload=json.dumps(data), researcher=self)
+        db.session.add(n)
+        return n
+
     @staticmethod
     def verify_reset_password_token(token):
         try:
