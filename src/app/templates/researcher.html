@@ -26,9 +26,11 @@
                     </form>
                 </p>
                 {% endif %}
+                {% if researcher != current_user %}
+                <p><a href="{{ url_for('main.send_message', recipient=researcher.researcher_name) }}">{{ _('Send private message') }}</a></p>
+                {% endif %}
             </td>
         </tr>
-    
     </table>
     
     <!-- Add Posts section here -->

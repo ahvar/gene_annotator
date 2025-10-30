@@ -1,6 +1,12 @@
-FROM public.ecr.aws/docker/library/python:slim
+FROM public.ecr.aws/docker/library/python:3.11-slim
 
-RUN apt-get update && apt-get install -y curl && apt-get clean
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+    
 # Set environment variables
 ENV PYTHONPATH=/opt/pipeline:/opt/pipeline/src:/opt/pipeline/src/etl:/opt/pipeline/src/utils:/opt/pipeline/src/etl/data:/opt/pipeline/src/workflows:/opt/pipeline/src/modules:/opt/pipeline/test:/opt/pipeline/test/utils:/opt/pipeline/src/app:/opt/pipeline/src/app/models
 ENV PATH=/opt/pipeline/:$PATH

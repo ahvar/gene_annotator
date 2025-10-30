@@ -1,4 +1,5 @@
 import jwt
+import json
 from dateutil.relativedelta import relativedelta
 from time import time
 from typing import Optional
@@ -63,6 +64,16 @@ class Researcher(UserMixin, db.Model):
     last_seen: so.Mapped[Optional[datetime]] = so.mapped_column(
         default=lambda: datetime.now(timezone.utc)
     )
+    last_message_read_time: so.Mapped[Optional[datetime]]
+    messages_sent: so.WriteOnlyMapped["Message"] = so.relationship(
+        foreign_keys="Message.sender_id", back_populates="recipient"
+    )
+    messages_received: so.WriteOnlyMapped["Message"] = so.relationship(
+        foreign_keys="Message.recipient_id", back_populates="recipient"
+    )
+    notifications: so.WriteOnlyMapped["Notification"] = so.relationship(
+        back_populates="Researcher"
+    )
     posts: so.WriteOnlyMapped["Post"] = so.relationship(back_populates="author")
 
     runs: so.Mapped[list["PipelineRun"]] = so.relationship(
@@ -119,6 +130,21 @@ class Researcher(UserMixin, db.Model):
             current_app.config["SECRET_KEY"],
             algorithm="HS256",
         )
+
+    def add_notification(self, name, data):
+        """
+        Helper method to add researcher's notification to database and ensure
+        that if a notification with same name already exists, it is removed first.
+
+        :params name: the name for this notification
+        :params data: the notification data
+        :returns n: the notification object
+
+        """
+        db.session.execute(self.notifications.delete().where(Notification.name == name))
+        n = Notification(name=name, payload=json.dumps(data), researcher=self)
+        db.session.add(n)
+        return n
 
     @staticmethod
     def verify_reset_password_token(token):
@@ -188,6 +214,15 @@ class Researcher(UserMixin, db.Model):
             .order_by(Post.timestamp.desc())
         )
 
+    def unread_messages_count(self):
+        last_read_time = self.last_message_read_time or datetime(1900, 1, 1)
+        query = sa.select(Message).where(
+            Message.recipient == self, Message.timestamp > last_read_time
+        )
+        return db.session.scalar(
+            sa.select(sa.func.count()).select_from(query.subquery())
+        )
+
 
 class Post(SearchableMixin, db.Model):
     id: so.Mapped[int] = so.mapped_column(primary_key=True)
@@ -206,6 +241,43 @@ class Post(SearchableMixin, db.Model):
 
     def __repr__(self):
         return "<Post {}>".format(self.body)
+
+
+class Message(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    sender_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    recipient_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    body: so.Mapped[str] = so.mapped_column(sa.String(140))
+    timestamp: so.Mapped[datetime] = so.mapped_column(
+        index=True, default=lambda: datetime.now(timezone.utc)
+    )
+    author: so.Mapped[Researcher] = so.relationship(
+        foreign_keys="Message.sender_id", back_populates="messages_sent"
+    )
+    recipient: so.Mapped[Researcher] = so.relationship(
+        foreign_keys="Message.recipient_id", back_populates="messages_received"
+    )
+
+    def __repr__(self):
+        return "<Message {}>".format(self.body)
+
+
+class Notification(db.Model):
+    id: so.Mapped[int] = so.mapped_column(primary_key=True)
+    name: so.Mapped[str] = so.mapped_column(sa.String(128), index=True)
+    researcher_id: so.Mapped[int] = so.mapped_column(
+        sa.ForeignKey(Researcher.id), index=True
+    )
+    timestamp: so.Mapped[float] = so.mapped_column(index=True, default=time)
+    payload_json: so.Mapped[str] = so.mapped_column(sa.Text)
+    researcher: so.Mapped[Researcher] = so.relationship(back_populates="notifications")
+
+    def get_data(self):
+        return json.loads(str(self.payload_json))
 
 
 @login.user_loader
