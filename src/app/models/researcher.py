@@ -72,7 +72,7 @@ class Researcher(UserMixin, db.Model):
         foreign_keys="Message.recipient_id", back_populates="recipient"
     )
     notifications: so.WriteOnlyMapped["Notification"] = so.relationship(
-        back_populates="Researcher"
+        back_populates="researcher"
     )
     posts: so.WriteOnlyMapped["Post"] = so.relationship(back_populates="author")
 
