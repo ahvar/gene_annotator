@@ -142,7 +142,7 @@ class Researcher(UserMixin, db.Model):
 
         """
         db.session.execute(self.notifications.delete().where(Notification.name == name))
-        n = Notification(name=name, payload=json.dumps(data), researcher=self)
+        n = Notification(name=name, payload_json=json.dumps(data), researcher=self)
         db.session.add(n)
         return n
 

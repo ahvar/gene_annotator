@@ -868,7 +868,7 @@ def messages():
     current_user.add_notification("unread_message_count", 0)
     db.session.commit()
     page = request.args.get("page", 1, type=int)
-    query = current_user.messages_received.select().order_by(Message.timestap.desc())
+    query = current_user.messages_received.select().order_by(Message.timestamp.desc())
     messages = db.paginate(
         query, page=page, per_page=current_app.config["POSTS_PER_PAGE"], error_out=False
     )
