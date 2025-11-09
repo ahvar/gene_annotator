@@ -66,7 +66,7 @@ class Researcher(UserMixin, db.Model):
     )
     last_message_read_time: so.Mapped[Optional[datetime]]
     messages_sent: so.WriteOnlyMapped["Message"] = so.relationship(
-        foreign_keys="Message.sender_id", back_populates="recipient"
+        foreign_keys="Message.sender_id", back_populates="author"
     )
     messages_received: so.WriteOnlyMapped["Message"] = so.relationship(
         foreign_keys="Message.recipient_id", back_populates="recipient"
