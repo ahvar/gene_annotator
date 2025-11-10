@@ -2,32 +2,13 @@ import unittest
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone, timedelta
 from test.app.test_config import TestConfig
-from src.app.models.researcher import Researcher, Post, Notification
+from src.app.models.researcher import Researcher, Post, Notification, Message
 from src.app import create_app, db
-
-
-class MockElasticsearch:
-    def index(self, *args, **kwargs):
-        return True
-
-    def search(self, *args, **kwargs):
-        return {"hits": {"total": {"value": 0}, "hits": []}}
-
-    def delete(self, *args, **kwargs):
-        return True
-
-    @classmethod
-    def reindex(cls):
-        pass
-
-
-def mock_reindex():
-    pass
-
-
-add_to_index_patch = patch("src.app.search.add_to_index", lambda *args, **kwrgs: None)
-remove_from_index_patch = patch(
-    "src.app.search.remove_from_index", lambda *args, **kwargs: None
+from test.app.test_search import (
+    MockElasticsearch,
+    mock_reindex,
+    add_to_index_patch,
+    remove_from_index_patch,
 )
 
 
@@ -173,3 +154,112 @@ class TestResearcherModel(unittest.TestCase):
 
         all_notifications = db.session.scalars(r1.notifications.select()).all()
         self.assertEqual(len(all_notifications), 2)
+
+
+class TestMessage(unittest.TestCase):
+    def setUp(self):
+        add_to_index_patch.start()
+        remove_from_index_patch.start()
+        self.es_patcher = patch(
+            "src.app.__init__.Elasticsearch", return_value=MockElasticsearch
+        )
+        self.mock_es = self.es_patcher.start()
+        self.reindex_patcher = patch(
+            "src.app.models.searchable.SearchableMixin.reindex", mock_reindex
+        )
+        self.mock_reindex = self.reindex_patcher.start()
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+        self.es_patcher.stop()
+        self.reindex_patcher.stop()
+
+    def test_send_message(self):
+        # Create two researchers
+        sender = Researcher(researcher_name="alice", email="alice@example.com")
+        recipient = Researcher(researcher_name="bob", email="bob@example.com")
+        db.session.add_all([sender, recipient])
+        db.session.commit()
+
+        message = Message(
+            author=sender,
+            recipient=recipient,
+            body="Hello Bob, this is a test message!",
+        )
+        db.session.add(message)
+        db.session.commit()
+
+        # Verify message was created correctly
+        self.assertIsNotNone(message.id)
+        self.assertEqual(message.sender_id, sender.id)
+        self.assertEqual(message.recipient_id, recipient.id)
+        self.assertEqual(message.body, "Hello Bob, this is a test message!")
+        self.assertIsNotNone(message.timestamp)
+
+        # Verify relationships work correctly
+        self.assertEqual(message.author, sender)
+        self.assertEqual(message.recipient, recipient)
+
+    def test_unread_message_count(self):
+        # Create two researchers
+        sender = Researcher(researcher_name="alice", email="alice@example.com")
+        recipient = Researcher(researcher_name="bob", email="bob@example.com")
+        db.session.add_all([sender, recipient])
+        db.session.commit()
+
+        # Initially, recipient should have 0 unread messages
+        self.assertEqual(recipient.unread_messages_count(), 0)
+
+        message = Message(author=sender, recipient=recipient, body="First message")
+        db.session.add(message)
+        db.session.commit()
+
+        # Recipient should now have 1 unread message
+        self.assertEqual(recipient.unread_messages_count(), 1)
+
+        # Send another message
+        message2 = Message(author=sender, recipient=recipient, body="Second message")
+        db.session.add(message2)
+        db.session.commit()
+
+        # Recipient should now have 2 unread messages
+        self.assertEqual(recipient.unread_messages_count(), 2)
+
+        recipient.last_message_read_time = datetime.now(timezone.utc)
+        db.session.commit()
+
+        # Should now have 0 unread messages
+        self.assertEqual(recipient.unread_messages_count(), 0)
+
+    def test_message_notification(self):
+        """Test that sending a message creates a notification"""
+        # Create two researchers
+        sender = Researcher(researcher_name="alice", email="alice@example.com")
+        recipient = Researcher(researcher_name="bob", email="bob@example.com")
+        db.session.add_all([sender, recipient])
+        db.session.commit()
+
+        message = Message(author=sender, recipient=recipient, body="Hello Bob!")
+        db.session.add(message)
+        db.session.commit()
+
+        # Add notification for unread message count
+        recipient.add_notification(
+            "unread_message_count", recipient.unread_messages_count()
+        )
+        db.session.commit()
+
+        # Verify notification was created
+        notifications = db.session.scalars(
+            recipient.notifications.select().where(
+                Notification.name == "unread_message_count"
+            )
+        ).all()
+        self.assertEqual(len(notifications), 1)
+        self.assertEqual(notifications[0].get_data(), 1)

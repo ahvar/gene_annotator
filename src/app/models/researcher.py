@@ -234,7 +234,7 @@ class Post(SearchableMixin, db.Model):
     researcher_id: so.Mapped[int] = so.mapped_column(
         sa.ForeignKey(Researcher.id), index=True
     )
-    language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
+    # language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
 
     author: so.Mapped[Researcher] = so.relationship(back_populates="posts")
     __searchable__ = ["body"]
