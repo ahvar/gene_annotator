@@ -66,7 +66,7 @@ class Researcher(UserMixin, db.Model):
     )
     last_message_read_time: so.Mapped[Optional[datetime]]
     messages_sent: so.WriteOnlyMapped["Message"] = so.relationship(
-        foreign_keys="Message.sender_id", back_populates="recipient"
+        foreign_keys="Message.sender_id", back_populates="author"
     )
     messages_received: so.WriteOnlyMapped["Message"] = so.relationship(
         foreign_keys="Message.recipient_id", back_populates="recipient"
@@ -142,7 +142,7 @@ class Researcher(UserMixin, db.Model):
 
         """
         db.session.execute(self.notifications.delete().where(Notification.name == name))
-        n = Notification(name=name, payload=json.dumps(data), researcher=self)
+        n = Notification(name=name, payload_json=json.dumps(data), researcher=self)
         db.session.add(n)
         return n
 
@@ -234,7 +234,7 @@ class Post(SearchableMixin, db.Model):
     researcher_id: so.Mapped[int] = so.mapped_column(
         sa.ForeignKey(Researcher.id), index=True
     )
-    language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
+    # language: so.Mapped[Optional[str]] = so.mapped_column(sa.String(5))
 
     author: so.Mapped[Researcher] = so.relationship(back_populates="posts")
     __searchable__ = ["body"]
