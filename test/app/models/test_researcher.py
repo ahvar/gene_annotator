@@ -1,4 +1,6 @@
 import unittest
+import sqlalchemy as sa
+from pathlib import Path
 from unittest.mock import patch, MagicMock
 from datetime import datetime, timezone, timedelta
 from test.app.test_config import TestConfig
@@ -263,3 +265,158 @@ class TestMessage(unittest.TestCase):
         ).all()
         self.assertEqual(len(notifications), 1)
         self.assertEqual(notifications[0].get_data(), 1)
+
+
+class TestPasswordResetTokens(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    def test_password_reset_token(self):
+        """Test generation and verification of password reset tokens"""
+        r = Researcher(researcher_name="testuser", email="test@example.com")
+        r.set_password("originalpassword")
+        db.session.add(r)
+        db.session.commit()
+
+        token = r.get_reset_password_token()
+        self.assertIsNotNone(token)
+
+        verified_user = Researcher.verify_reset_password_token(token)
+        self.assertEqual(verified_user.id, r.id)
+
+        invalid_token = "invalid-token"
+        self.assertIsNone(Researcher.verify_reset_password_token(invalid_token))
+
+
+class TestUserLoading(unittest.TestCase):
+    def setUp(self):
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+        self.app_context.pop()
+
+    @patch("builtins.open")
+    @patch("json.load")
+    def test_load_test_users(self, mock_json_load, mock_open):
+        """Test loading of test users from JSON file"""
+
+        # Mock test user data
+        test_users = [
+            {
+                "researcher_name": "test_user1",
+                "email": "test1@example.com",
+                "password": "password1",
+                "about_me": "Test user 1",
+                "posts": ["Post from test user 1"],
+                "following": ["test_user2"],
+            },
+            {
+                "researcher_name": "test_user2",
+                "email": "test2@example.com",
+                "password": "password2",
+                "about_me": "Test user 2",
+                "posts": ["Post from test user 2"],
+                "following": [],
+            },
+        ]
+
+        # Configure mocks
+        mock_json_load.return_value = test_users
+        mock_open.return_value.__enter__.return_value = "mocked_file"
+
+        runner = self.app.test_cli_runner()
+        result = runner.invoke(args=["load-test-users"])
+
+        self.assertEqual(result.exit_code, 0)
+
+        # Verify users were created
+        users = db.session.scalars(sa.select(Researcher)).all()
+        self.assertEqual(len(users), 2)
+
+        # Verify user details
+        user1 = db.session.scalar(
+            sa.select(Researcher).where(Researcher.researcher_name == "test_user1")
+        )
+        user2 = db.session.scalar(
+            sa.select(Researcher).where(Researcher.researcher_name == "test_user2")
+        )
+
+        self.assertEqual(user1.email, "test1@example.com")
+        self.assertEqual(user1.about_me, "Test user 1")
+        self.assertTrue(user1.check_password("password1"))
+
+        self.assertEqual(user2.email, "test2@example.com")
+        self.assertEqual(user2.about_me, "Test user 2")
+        self.assertTrue(user2.check_password("password2"))
+
+        # Verify posts were created
+        posts = db.session.scalars(sa.select(Post)).all()
+        self.assertEqual(len(posts), 2)
+
+        # Verify following relationship
+        self.assertTrue(user1.is_following(user2))
+        self.assertFalse(user2.is_following(user1))
+
+        self.assertEqual(user1.following_count(), 1)
+        self.assertEqual(user2.followers_count(), 1)
+
+    @patch("builtins.open")
+    @patch("builtins.print")
+    def test_load_test_users_file_not_found(self, mock_print, mock_open):
+        """Test handling of missing test_users.json file"""
+        from src.app.cli import load_test_users
+
+        # Simulate file not existing
+        mock_open.side_effect = FileNotFoundError("File not found")
+
+        # Call the function
+        load_test_users()
+
+        # Verify appropriate message was printed
+        mock_print.assert_called_with(
+            "Test users file not found: "
+            + str(
+                Path(__file__).resolve().parent.parent.parent.parent / "test_users.json"
+            )
+        )
+
+        # Verify no users were added
+        user_count = db.session.scalar(sa.func.count(Researcher.id))
+        self.assertEqual(user_count, 0)
+
+    def test_load_test_users_with_existing_data(self):
+        """Test loading test users when database already has users"""
+        from src.app.cli import load_test_users
+
+        # Add a researcher before running load_test_users
+        r = Researcher(researcher_name="existing_user", email="existing@example.com")
+        r.set_password("existingpw")
+        db.session.add(r)
+        db.session.commit()
+
+        # Now try to load test users
+        with patch("builtins.print") as mock_print:
+            load_test_users()
+
+        # Verify it skipped loading
+        mock_print.assert_called_with(
+            "Database already contains 1 users. Skipping test user creation."
+        )
+
+        # Verify only our original user exists
+        users = db.session.scalars(sa.select(Researcher)).all()
+        self.assertEqual(len(users), 1)
+        self.assertEqual(users[0].researcher_name, "existing_user")

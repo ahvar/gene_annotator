@@ -851,7 +851,7 @@ def send_message(recipient):
         msg = Message(author=current_user, recipient=researcher, body=form.message.data)
         db.session.add(msg)
         researcher.add_notification(
-            "unread_message_count", researcher.unread_message_count()
+            "unread_message_count", researcher.unread_messages_count()
         )
         db.session.commit()
         flash(_("Your message has been sent."))
