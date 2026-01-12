@@ -1,7 +1,7 @@
 import sqlalchemy as sa
 import sqlalchemy.orm as so
 from src.app import create_app, db
-from src.app.models.researcher import Researcher, Post, Message, Notification
+from src.app.models.researcher import Researcher, Post, Message, Notification, Task
 from src.app.models.gene import Gene, GeneAnnotation
 from src.app.models.pipeline_run import PipelineRun, PipelineResult
 
@@ -22,4 +22,5 @@ def make_shell_context():
         "Gene_Annotation": GeneAnnotation,
         "Pipeline_Run": PipelineRun,
         "PipelineResult": PipelineResult,
+        "Task": Task,
     }
