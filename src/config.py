@@ -13,6 +13,7 @@ class Config:
         basedir / "src" / "app" / "app.db"
     )
     ELASTICSEARCH_URL = os.environ.get("ELASTICSEARCH_URL")
+    REDIS_URL = os.environ.get("REDIS_URL") or "redis://"
     MAIL_SERVER = os.environ.get("MAIL_SERVER")
     MAIL_PORT = int(os.environ.get("MAIL_PORT") or 25)
     MAIL_USE_TLS = os.environ.get("MAIL_USE_TLS") is not None

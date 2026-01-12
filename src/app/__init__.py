@@ -1,5 +1,6 @@
 import os
 import logging
+import rq
 from logging.handlers import SMTPHandler
 from flask import Flask, request, current_app
 from flask_sqlalchemy import SQLAlchemy
@@ -8,6 +9,7 @@ from flask_login import LoginManager
 from flask_mail import Mail
 from flask_moment import Moment
 from flask_babel import Babel
+from redis import Redis
 from elasticsearch import Elasticsearch
 from src.config import Config
 
@@ -56,6 +58,9 @@ def create_app(config_class=Config):
         if app.config["ELASTICSEARCH_URL"]
         else None
     )
+
+    app.redis = Redis.from_url(app.config["REDIS_URL"])
+    app.task_queue = rq.Queue("gene-annotator-tasks", connection=app.redis)
     if not app.debug and not app.testing:
         if app.config["MAIL_SERVER"]:
             auth = None
