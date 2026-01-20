@@ -943,3 +943,16 @@ def researcher_popup(researcher_name):
     )
     form = EmptyForm()
     return render_template("researcher_popup.html", researcher=researcher, form=form)
+
+
+@bp.route("/export_posts")
+@login_required
+def export_posts():
+    if current_user.get_task_in_progress("export_posts"):
+        flash(_("An export task is currently in progress"))
+    else:
+        current_user.launch_task("export_posts", _("Exporting posts..."))
+        db.session.commmit()
+    return redirect(
+        url_for("main.researcher", researcher_name=current_user.researcher_name)
+    )
