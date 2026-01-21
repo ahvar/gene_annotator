@@ -1,0 +1,7 @@
+Dear {{ researcher.researcher_name }}
+
+Please find attached the archive of your posts that you requested.
+
+Sincerely,
+
+The Gene Annotator Team
