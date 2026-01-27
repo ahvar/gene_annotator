@@ -61,6 +61,10 @@ def create_app(config_class=Config):
 
     app.redis = Redis.from_url(app.config["REDIS_URL"])
     app.task_queue = rq.Queue("gene-annotator-tasks", connection=app.redis)
+
+    from src.app.api import bp as api_bp
+
+    app.register_blueprint(api_bp, url_prefix="/api")
     if not app.debug and not app.testing:
         if app.config["MAIL_SERVER"]:
             auth = None
