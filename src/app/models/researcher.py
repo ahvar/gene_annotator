@@ -16,7 +16,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as so
 from src.app import db, login
 from src.app.models.pipeline_run import PipelineRun
-from src.app.models.searchable import SearchableMixin
+from src.app.models.searchable import SearchableMixin, PaginatedAPIMixin
 
 followers = sa.Table(
     "followers",
@@ -30,7 +30,7 @@ followers = sa.Table(
 )
 
 
-class Researcher(UserMixin, db.Model):
+class Researcher(PaginatedAPIMixin, UserMixin, db.Model):
     """A researcher user model for the gene annotation system.
 
     This class represents users of the gene annotation platform with authentication,

@@ -1,4 +1,5 @@
 import sqlalchemy as sa
+from flask import url_for
 from src.app import db, search
 
 
@@ -135,3 +136,44 @@ class SearchableMixin(object):
 
 db.event.listen(db.session, "before_commit", SearchableMixin.before_commit)
 db.event.listen(db.session, "after_commit", SearchableMixin.after_commit)
+
+
+class PaginatedAPIMixin(object):
+    """
+    A mixin class that provides pagination functionality for API endpoints.
+    This mixin class is designed to be inherited by other classes that need to
+    provide paginated responses for API endpoints. It contains utility methods
+    to convert database query results into a standardized paginated format
+    with metadata and navigation links.
+    Methods:
+        to_collection_dict: Converts a database query into a paginated dictionary
+                           response with items, metadata, and navigation links.
+    """
+
+    @staticmethod
+    def to_collection_dict(query, page, per_page, endpoint, **kwargs):
+        resources = db.paginate(query, page=page, per_page=per_page, error_out=False)
+
+        data = {
+            "items": [item.to_dict() for item in resources.items],
+            "_meta": {
+                "page": page,
+                "per_page": per_page,
+                "total_pages": resources.pages,
+                "total_items": resources.total,
+            },
+            "_links": {
+                "self": url_for(endpoint, page=page, per_page=per_page, **kwargs),
+                "next": (
+                    url_for(endpoint, page=page + 1, per_page=per_page, **kwargs)
+                    if resources.has_next
+                    else None
+                ),
+                "prev": (
+                    url_for(endpoint, page=page - 1, per_page=per_page, **kwargs)
+                    if resources.has_prev
+                    else None
+                ),
+            },
+        }
+        return data
