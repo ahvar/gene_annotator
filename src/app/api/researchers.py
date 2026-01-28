@@ -1,12 +1,14 @@
 from src.app.api import bp
 from src.app.api.errors import bad_request
+from src.app.api.auth import token_auth
 from src.app.models.researcher import Researcher
 from src.app import db
 import sqlalchemy as sa
-from flask import request, url_for
+from flask import request, url_for, abort
 
 
 @bp.route("/researcher/<int:id>", methods=["GET"])
+@token_auth.login_required
 def get_researcher(id):
     """
     Retrieve a researcher by ID.
@@ -22,6 +24,7 @@ def get_researcher(id):
 
 
 @bp.route("/researchers", methods=["GET"])
+@token_auth.login_required
 def get_researchers():
     """
     Retrieve a paginated collection of researchers.
@@ -45,6 +48,7 @@ def get_researchers():
 
 
 @bp.route("/researchers/<int:id>/followers", methods=["GET"])
+@token_auth.login_required
 def get_followers(id):
     """
     Retrieve a paginated collection of followers for a specific researcher.
@@ -70,6 +74,7 @@ def get_followers(id):
 
 
 @bp.route("/researchers/<int:id>/following", methods=["GET"])
+@token_auth.login_required
 def get_following(id):
     """
     Retrieve a paginated collection of researchers that a specific researcher is following.
@@ -141,6 +146,7 @@ def create_researcher():
 
 
 @bp.route("/researcher/<int:id>", methods=["PUT"])
+@token_auth.login_required
 def update_researcher(id):
     """
     Update an existing researcher's information.
@@ -160,6 +166,8 @@ def update_researcher(id):
         - Only updates fields that are provided in the request data
         - Commits changes to the database upon successful validation
     """
+    if token_auth.current_user.id != id:
+        abort(403)
 
     researcher = db.get_or_404(Researcher, id)
     data = request.get_json()

@@ -1,6 +1,6 @@
 import jwt
 import json
-import rq, redis
+import rq, redis, secrets
 from dateutil.relativedelta import relativedelta
 from time import time
 from typing import Optional
@@ -8,7 +8,7 @@ from hashlib import md5
 from flask import current_app, url_for
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from redis import Redis
 from src.app import db
 
@@ -82,6 +82,12 @@ class Researcher(PaginatedAPIMixin, UserMixin, db.Model):
     runs: so.Mapped[list["PipelineRun"]] = so.relationship(
         "PipelineRun", back_populates="researcher"
     )
+
+    token: so.Mapped[Optional[str]] = so.mapped_column(
+        sa.String(32), index=True, unique=True
+    )
+
+    token_expiration: so.Mapped[Optional[datetime]]
 
     def set_password(self, password: str) -> None:
         self.password_hash = generate_password_hash(password)
@@ -371,6 +377,60 @@ class Researcher(PaginatedAPIMixin, UserMixin, db.Model):
                 setattr(self, field, data[field])
             if new_researcher and "password" in data:
                 self.set_password(data["password"])
+
+    def get_token(self, expires_in=3600):
+        """
+        Generate or retrieve a valid authentication token for the researcher.
+        If a valid token exists and won't expire within the next 60 seconds,
+        returns the existing token. Otherwise, generates a new token and updates
+        the expiration time.
+        Args:
+            expires_in (int, optional): Token expiration time in seconds.
+                                      Defaults to 3600 (1 hour).
+        Returns:
+            str: A hexadecimal authentication token string.
+        Side Effects:
+            - Updates self.token with a new 32-character hex string if needed
+            - Updates self.token_expiration with new expiration datetime
+            - Adds the instance to the database session for persistence
+        """
+
+        now = datetime.now(timezone.utc)
+        if self.token and self.token_expiration.replace(
+            tzinfo=timezone.utc
+        ) > now + timedelta(seconds=60):
+            return self.token
+        self.token = secrets.token_hex(16)
+        self.token_expiration = now + timedelta(seconds=expires_in)
+        db.session.add(self)
+        return self.token
+
+    def revoke_token(self):
+        self.token_expiration == datetime.now(timezone.utc) - timedelta(seconds=1)
+
+    @staticmethod
+    def check_token(token):
+        """
+        Validate a researcher's authentication token and check if it's still valid.
+        Args:
+            token (str): The authentication token to validate.
+        Returns:
+            Researcher or None: Returns the Researcher object if the token is valid
+            and not expired, otherwise returns None.
+        Note:
+            The token is considered invalid if:
+            - No researcher is found with the given token
+            - The token has expired (token_expiration < current UTC time)
+        """
+
+        researcher = db.session.scalar(
+            sa.select(Researcher).where(Researcher.token == token)
+        )
+        if researcher is None or researcher.token_expiration.replace(
+            tzinfo=timezone.utc
+        ) < datetime.now(timezone.utc):
+            return None
+        return researcher
 
 
 class Post(SearchableMixin, db.Model):
